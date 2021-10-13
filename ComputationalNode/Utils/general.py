@@ -7,22 +7,14 @@ import codecs
 import pickle
 
 payload_schema = Schema({
-    "metadata": {
-        "worker_node": str,
-        "inquiring_node": str,
-        "start_time": str,
-        "max_cpu_allowed": float,
-        "timeout_boundary": int,
-        "task_type": str,
-    },
     "data": {
         "X": str,
         "y": str,
     },
     "instructions": {
-        "code" : str,
         "param_grid" : dict,
-        "algorithm_name": str,
+        "algorithm_name_str": str,
+        "search_name_str": str
     },
 })
 
