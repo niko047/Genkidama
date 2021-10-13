@@ -1,27 +1,33 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer
+from NodeLog.models import NodeLog
 import nmap
+import time
 
-class ScanComputationalNodes(AsyncWebsocketConsumer):
+class ScanComputationalNodes(WebsocketConsumer):
 
     # groups = ["broadcast"]
 
-    async def connect(self):
+    def connect(self):
         #Accepts only requests from itself (or very trusted nodes)
-        await self.accept()
+        self.accept()
 
-    async def receive(self, text_data=None, bytes_data=None):
+    def receive(self, text_data=None, bytes_data=None):
 
-        WS_PORT = '8000'
+        WS_PORT = 7999
         NETWORK = '192.168.1.0'
 
         #Pings the networks and checks for pingable IPs
         nm = nmap.PortScanner()
 
-        #Change it, should be a parameter and not a fixed string
         print('Starting scan')
-        scan_res = nm.scan(f'-sT {NETWORK}/24 -p {WS_PORT}')
-        print('Scan ended')
+        start_time = time.time()
+
+        scan_res = nm.scan(f'-sS {NETWORK}/24 -p {WS_PORT}')
+
+        end_time = time.time()
+        print(f'Scan ended, time elapsed: {round(end_time - start_time)} seconds')
+
         active_network_ips = scan_res['scan'].keys()
         print(f'Active network ips {scan_res["scan"]}')
         genkisockets = {ip : scan_res['scan'][f'{ip}']['tcp'][WS_PORT]['state'] \
@@ -29,11 +35,11 @@ class ScanComputationalNodes(AsyncWebsocketConsumer):
                         if scan_res['scan'][f'{ip}']['tcp'][WS_PORT]['state'] == 'open'}
         print(f'result {genkisockets}')
 
-        #Saves the result to the database
-
-
         #Returns a status 200 to the data scientist requiring the scan
-        await self.send(json.dumps(genkisockets))
+        self.send(json.dumps(genkisockets))
+
+        # Saves the result to the database
+
 
         #Returns something else if the process fails
 
