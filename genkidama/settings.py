@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'OrchestratorNode',
     'MachineLearning',
     'channels',
+    'NodeLog',
 ]
 
 MIDDLEWARE = [

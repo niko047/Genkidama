@@ -17,6 +17,7 @@ class ComputationalNode(WebsocketConsumer):
         # 2. Check if the orchestrator IP is available in the verified DB of orchestrator IPs
         #pseudocode -> if orchestratorIP in db.query(verified_orchestrator_IPs) then conferm else refuse
 
+
         # 3. Accept the connection
         self.accept()
 
