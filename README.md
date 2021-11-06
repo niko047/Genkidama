@@ -10,9 +10,11 @@ More technically, the Orchestrator is built as an AsyncronousNode using DjangoCh
 
 1. At inizialization of the Computational nodes, an instance in DB is written, containing the LAN IP of the computational node, and some variables containing information about the state of the node itself.
 
-2. The Data Scientist tells the Orchestrator node to access the DB looking for active GenkiSocket nodes and writes them down, distributing the workload according to the number of available nodes.
+2. The controller tells the Orchestrator node to access the DB looking for active GenkiSocket nodes and saves them up, call the number of active nodes N.
 
-4. The orchestrator repeats the process iteratively until convergence or until a stopping condition is met.
+3. Orchestrator gets the N samples N points uniformly in the parameter space and hands them out to the sockets (to evaluate the cost J(P), P vector of param values)
+
+4. The orchestrator repeats the process iteratively, receiving back the evaluations of the cost from the nodes and updating real time the GP acquisition function, and handing out the new potentially most interesting points. This process is repeated in an asyncronous fashion until convergence or until a stopping condition is met.
 
 5. The nodes recorded their status as "active" and leave that status until the data scientist stops the process, or when a node cannot receive requests as a GenkiSocket anymore. Then they're market as "inactive" and they die.
 
