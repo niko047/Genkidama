@@ -6,7 +6,7 @@ It does so acknowledging the fact that in most company there is an extensive nee
 
 By using the concept of Orchestrators and Computational nodes, it is possible to optimize the training of different algorithms cutting (linearly with respect to the number of computational nodes available) the computational time required for training and fine tuning of supervised algorithms.
 
-More technically, the Orchestrator is built as an AsyncronousNode using DjangoChannels, working both as an optimizer and a workload balancer. It sends out the tasks through a secure Websocket connection to the computational nodes (which are SyncronousNodes check first the trustworthyness of the Orchestrator after accessing a secure database) and then silently and actively listens for directions (run in background) on what to train and what to tune. Computational nodes send then back the result to the Orchestrator as soon as they're done, and the process is repeated iteratively either until convergence or until a stopping condition is met.
+More technically, the Orchestrator is built as an AsyncronousNode using DjangoChannels, working both as an optimizer and a workload balancer. It sends out the tasks through a secure Websocket connection to the computational nodes (which are SyncronousNodes check first the trustworthyness of the Orchestrator after accessing a secure database) and then silently and actively listens for directions (run in background) on what to train and what to tune. The process is brieflu describes as follows:
 
 1. At inizialization of the Computational nodes, an instance in DB is written, containing the LAN IP of the computational node, and some variables containing information about the state of the node itself.
 
