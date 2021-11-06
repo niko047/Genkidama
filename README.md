@@ -21,7 +21,7 @@ More technically, the Orchestrator is built as an AsyncronousNode using DjangoCh
 ****** TODO ******
 - [x] Initialize websockets for each node and host them in the LAN
 - [x] Instantiate a connection and pickle data in bytes which can be transferred
-- [x] Define a systematic protocol through which input is validated
+- [x] Define a systematic data transfer protocol and input validation
 - [ ] Connect AWS DB to the Django proj
 - [ ] Develop the heuristic of the GP in the orchestrator node
 
