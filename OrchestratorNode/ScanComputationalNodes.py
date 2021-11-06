@@ -1,4 +1,4 @@
-import json
+'''import json
 from channels.generic.websocket import WebsocketConsumer
 from NodeLog.models import NodeLog
 import nmap
@@ -42,5 +42,5 @@ class ScanComputationalNodes(WebsocketConsumer):
 
 
         #Returns something else if the process fails
-
+'''
 

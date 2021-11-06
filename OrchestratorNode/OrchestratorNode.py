@@ -1,18 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from ast import literal_eval
-from .Utils.general import is_valid_input_payload, str_bytes_to_pandas_df
-from .Utils.algorithm_switcher import algorithm_switch
-import pandas as pd
-from types import SimpleNamespace
-from sklearn.model_selection import GridSearchCV
-from .models import NodeLog
-from django.utils import timezone
-import hashlib
-from channels.db import database_sync_to_async
-import datetime
 
-class NodeConsumer(AsyncWebsocketConsumer):
+
+class OrchestratorNode(AsyncWebsocketConsumer):
 
     #groups = ["broadcast"]
 

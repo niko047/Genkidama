@@ -1,10 +1,10 @@
 from django.urls import path
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from .ScanComputationalNodes import ScanComputationalNodes
+from .OrchestratorNode import OrchestratorNode
 
 ws_pattern = [
-    path('scan_computational_nodes/', ScanComputationalNodes.as_asgi()),
+    path('scan_computational_nodes/', OrchestratorNode.as_asgi()),
 ]
 
 application = ProtocolTypeRouter(

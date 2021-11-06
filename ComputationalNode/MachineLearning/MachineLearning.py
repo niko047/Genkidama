@@ -13,7 +13,7 @@ class BaseModel:
                  y: pd.DataFrame):
         self.X = X
         self.y = y
-        BaseModel.data_validity_checks(X = X, y = y)
+        #BaseModel.data_validity_checks(X = X, y = y)
 
     @staticmethod
     def data_validity_checks(X, y) -> None:

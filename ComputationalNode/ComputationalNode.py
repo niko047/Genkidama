@@ -39,12 +39,14 @@ class ComputationalNode(WebsocketConsumer):
         # Decodes all the inputs and gets them back to being pandas dataframes
         data_dict = {k: str_bytes_to_pandas_df(v) for k, v in payload_dict.get('data').items()}
 
+
         # Saves the dict in the object Data
         Data = SimpleNamespace(**data_dict)
 
         algorithm_name = payload_dict["instructions"].get("algorithm_name_str")
         search_name = payload_dict["instructions"].get("search_name_str")
         param_grid = payload_dict["instructions"].get("param_grid")
+
 
         tuning_model = HyperparameterTuning(X= Data.X,
                                             y= Data.y,
