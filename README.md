@@ -1,6 +1,6 @@
 # Genkidama
 
-Genkidama is a library offering a system for optimizing and distributing the computational workload required for training and tuning a machine learning algorithm over a local area network (LAN). 
+Genkidama is a library offering a system for optimizing and distributing the computational workload required for training and tuning a machine learning algorithm over a local area network (LAN). In its first version it is conceived to be centered around Hyperparameter optimization using Gaussian Processes (by building a surrogate function estimating the cost function J(p_1, ... p_n), and then using an acquisition function to get the most appealing candidate points in the parameter space to be evaluated).
 
 It does so acknowledging the fact that in most company there is an extensive need for CPU by the technical department, and lots of unused CPU by the other departments' machines.
 
