@@ -18,6 +18,12 @@ More technically, the Orchestrator is built as an AsyncronousNode using DjangoCh
 
 5. The nodes recorded their status as "active" and leave that status until the data scientist stops the process, or when a node cannot receive requests as a GenkiSocket anymore. Then they're market as "inactive" and they die.
 
+****** TODO ******
+- [x] Initialize websockets for each node and host them in the LAN
+- [x] Instantiate a connection and pickle data in bytes which can be transferred
+- [x] Define a systematic protocol through which input is validated
+- [ ] Connect AWS DB to the Django proj
+- [ ] Develop the heuristic of the GP in the orchestrator node
 
 
 ## Contributing
