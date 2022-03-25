@@ -12,16 +12,35 @@ class Manager(object):
     def __init__(self):
         self.a = 5
 
+    @staticmethod
+    def initialize_semaphor(num_workers):
+        """Shared semaphor that when filled with 1's, allows network updates to begin"""
+        s = torch.Tensor([0]*num_workers).to(torch.bool)
+        s.share_memory_()
+        return s
+    
+    @staticmethod
+    def initialize_queue(len_queue):
+        """Initializes a first-in first-out queue of batches updates of the shared network"""
+        return mp.Queue(len_queue)
 
-def foo(t, i, max_num_interactions):
+
+def foo(t, i, semaphor, queue):
     b = ReplayBuffers(shared_replay_buffer=t, cpu_id=i, len_interaction=LEN_SINGLE_STATE, batch_size=3, num_iters=LEN_ITERATIONS,
-                      tot_num_cpus = NUM_CPUS, replacement = False)
+                      tot_num_cpus = NUM_CPUS, replacement=False)
 
     # Get the array from shared memory and reshape it into a numpy array
     for j in range(LEN_ITERATIONS):
         b.record_interaction(torch.Tensor([i]*4))
+    # Green light
+    semaphor[b.cpu_id] = True
 
-    print(f'Random sampled batch is {b.random_sample_batch(from_shared_memory=False)}')
+    while not torch.all(semaphor):
+        pass
+
+    # Insert random sampled batch into queue for the Net's updates
+    queue.put(b.random_sample_batch(from_shared_memory=False))
+
 
 def task_handler(cpu_id):
     if cpu_id == 0:
@@ -30,10 +49,6 @@ def task_handler(cpu_id):
     else:
         # Behave as a working node
         pass
-
-# TODO - Define a class Manager
-# TODO - Define a Maneger.task_handler
-# TODO - Define a Manager.semaphor
 
 # TODO - Implement a manager class, it should start random sampling once all CPUs have reached a certain number
 # TODO - of steps in their environment. Then they can all go freely. After that, Implement the result of the random sampling
@@ -47,18 +62,14 @@ if __name__ == '__main__':
                                               num_iters=LEN_ITERATIONS,
                                               tot_num_cpus=NUM_CPUS,
                                               dtype=torch.float32)
+    semaphor = Manager.initialize_semaphor(NUM_CPUS)
+    queue = Manager.initialize_queue(NUM_CPUS)
+
     print(f'Buffer is {buffer}')
 
-    procs = [mp.Process(target=foo, args=(buffer, i, LEN_ITERATIONS,)) for i in range(mp.cpu_count())]
+    procs = [mp.Process(target=foo, args=(buffer, i, semaphor, queue)) for i in range(mp.cpu_count())]
     [p.start() for p in procs]
     [p.join() for p in procs]
 
-    print(f'New buffer is {buffer}')
-    sample = ReplayBuffers.random_sample_batch_(shared_buffer = buffer,
-                             len_interaction = LEN_SINGLE_STATE,
-                             num_iters = LEN_ITERATIONS,
-                             tot_num_cpus = NUM_CPUS,
-                             batch_size = 3,
-                             replacement=False)
-
-    print(f'buffer is {buffer} shared memory {buffer.is_shared()}')
+    for j in range(NUM_CPUS):
+        print(queue.get(j))
