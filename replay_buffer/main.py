@@ -26,9 +26,15 @@ class Manager(object):
 
 
 def foo(t, i, semaphor, queue):
-    b = ReplayBuffers(shared_replay_buffer=t, cpu_id=i, len_interaction=LEN_SINGLE_STATE, batch_size=3, num_iters=LEN_ITERATIONS,
-                      tot_num_cpus = NUM_CPUS, replacement=False)
-
+    b = ReplayBuffers(shared_replay_buffer=t,
+                      cpu_id=i,
+                      len_interaction=LEN_SINGLE_STATE,
+                      batch_size=3,
+                      num_iters=LEN_ITERATIONS,
+                      tot_num_cpus=NUM_CPUS,
+                      replacement=False)
+    
+    # TODO - Start of iterable part
     # Get the array from shared memory and reshape it into a numpy array
     for j in range(LEN_ITERATIONS):
         b.record_interaction(torch.Tensor([i]*4))
@@ -40,15 +46,6 @@ def foo(t, i, semaphor, queue):
 
     # Insert random sampled batch into queue for the Net's updates
     queue.put(b.random_sample_batch(from_shared_memory=False))
-
-
-def task_handler(cpu_id):
-    if cpu_id == 0:
-        # Behave as the central node handling updates
-        pass
-    else:
-        # Behave as a working node
-        pass
 
 # TODO - Implement a manager class, it should start random sampling once all CPUs have reached a certain number
 # TODO - of steps in their environment. Then they can all go freely. After that, Implement the result of the random sampling
