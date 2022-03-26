@@ -6,6 +6,7 @@ import random
 from buffer import ReplayBuffers
 from main import Manager
 import torch.multiprocessing as mp
+from shared_adam import SharedAdam
 
 
 mp.set_start_method('spawn', force=True)
@@ -23,7 +24,7 @@ def selected_range_sample(): return [(random.random() - .5) * 10, (random.random
 # Generate our data, where last column is output
 def generate_data_row():
     d = selected_range_sample()
-    return torch.Tensor(d + [f_true(*d)], dtype=torch.float32)
+    return torch.Tensor([*d, f_true(*d)]).to(torch.float32)
 
 class NNet(nn.Module):
 
@@ -42,7 +43,9 @@ class NNet(nn.Module):
 
 NUM_EPISODES = 500
 NUM_STEPS = 50
-def train_model(net, buffer, i, semaphor, queue):
+def train_model(glob_net, opt, buffer, i, semaphor, queue):
+    loc_net = NNet()
+
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=i,
                       len_interaction=LEN_SINGLE_STATE + 1,
@@ -58,15 +61,31 @@ def train_model(net, buffer, i, semaphor, queue):
 
     for i in range(NUM_EPISODES):
         # Generate training data and update buffer
-        for j in range(NUM_EPISODES):
+        for j in range(NUM_STEPS):
             tensor_tuple = generate_data_row()
-            buffer.record_interaction(tensor_tuple)
-        pass
+            b.record_interaction(tensor_tuple)
 
+            if not((j+1) % 25):
+                # TODO - Update the global parameters, reset gradients, pull global params
+                for r in b.random_sample_batch(from_shared_memory=True):
+                    loc_output = loc_net.forward(r[:-1])
+                    loss = F.mse_loss(loc_output, r[-1])
+                    opt.zero_grad()
+                    loss.backward()
+
+                    for lp, gp in zip(loc_net.parameters(), glob_net.parameters()):
+                        gp._grad = lp.grad
+                    opt.step()
+
+                    loc_net.load_state_dict(glob_net.state_dict())
+                    #print(f'EPISODE {i} STEP {j+1} -> Loss for cpu {b.cpu_id} is: {loss}')
 
 if __name__ == '__main__':
-    net = NNet()
-    net.share_memory()
+    glob_net = NNet()
+    glob_net.share_memory()
+
+    opt = SharedAdam(glob_net.parameters(), lr=1e-4, betas=(0.92, 0.999))  # global optimizer
+
 
     buffer = ReplayBuffers.init_global_buffer(len_interaction=LEN_SINGLE_STATE + 1, # 2 inputs + 1 output
                                               num_iters=LEN_ITERATIONS,
@@ -75,18 +94,19 @@ if __name__ == '__main__':
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
     queue = Manager.initialize_queue(NUM_CPUS)
 
-    procs = [mp.Process(target=train_model, args=(net, buffer, i, semaphor, queue)) for i in range(mp.cpu_count())]
+    procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, queue)) for i in range(mp.cpu_count())]
     [p.start() for p in procs]
     [p.join() for p in procs]
 
-
-    optimizer = optim.Adam(n.parameters(), lr=1e-3)
-    losses = []
-    for k, (vx, vy) in enumerate(zip(X, y)):
-        n.zero_grad()
-        output = n(torch.Tensor(vx))
-        loss = F.mse_loss(output, torch.Tensor([vy]))
-        loss.backward()
-        optimizer.step()
-        losses.append(loss)
-        print(f'Current loss is {loss}')
+'''
+optimizer = optim.Adam(n.parameters(), lr=1e-3)
+losses = []
+for k, (vx, vy) in enumerate(zip(X, y)):
+    n.zero_grad()
+    output = n(torch.Tensor(vx))
+    loss = F.mse_loss(output, torch.Tensor([vy]))
+    loss.backward()
+    optimizer.step()
+    losses.append(loss)
+    print(f'Current loss is {loss}')
+'''
