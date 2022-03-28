@@ -1,6 +1,7 @@
-from buffer import ReplayBuffers
 import torch
 import torch.multiprocessing as mp
+
+from MARL.buffer import ReplayBuffers
 
 mp.set_start_method('spawn', force=True)
 
@@ -18,7 +19,7 @@ class Manager(object):
         s = torch.Tensor([0]*num_workers).to(torch.bool)
         s.share_memory_()
         return s
-    
+
     @staticmethod
     def initialize_queue(len_queue):
         """Initializes a first-in first-out queue of batches updates of the shared network"""
@@ -33,7 +34,7 @@ def foo(t, i, semaphor, queue):
                       num_iters=LEN_ITERATIONS,
                       tot_num_cpus=NUM_CPUS,
                       replacement=False)
-    
+
     # TODO - Start of iterable part
     # Get the array from shared memory and reshape it into a numpy array
     for j in range(LEN_ITERATIONS):

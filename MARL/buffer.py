@@ -1,5 +1,4 @@
 import torch
-import torch.multiprocessing as mp
 
 
 class ReplayBuffers(object):
