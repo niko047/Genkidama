@@ -3,7 +3,24 @@ import torch
 
 class ReplayBuffers(object):
 
-    def __init__(self, shared_replay_buffer, cpu_id, len_interaction, num_iters, batch_size, tot_num_cpus, replacement):
+    def __init__(self, shared_replay_buffer: torch.Tensor,
+                 cpu_id: int,
+                 len_interaction: int,
+                 num_iters: int,
+                 batch_size: int,
+                 tot_num_cpus: int,
+                 replacement: bool,
+                 sample_from_shared_memory: bool):
+        '''
+
+        :param shared_replay_buffer:    Tensor shared amongst CPU processes
+        :param cpu_id:                  Unique id of the CPU using the current object
+        :param len_interaction:         len(X_i) + len(y_i), features + output length at any given state s_i
+        :param num_iters:               Number of iterations after which the replay memory for CPU_{i} is full
+        :param batch_size:              Batch size of the sampled batch for updating the net
+        :param tot_num_cpus:            Total number of CPUs available within this same machine
+        :param replacement:             Sampling method from replay memory
+        '''
         self.shared_replay_buffer = shared_replay_buffer
         self.cpu_id = cpu_id
         self.current_iter_number = 0
@@ -12,6 +29,7 @@ class ReplayBuffers(object):
         self.tot_num_cpus = tot_num_cpus
         self.replacement = replacement
         self.batch_size = batch_size
+        self.sample_from_shared_memory = sample_from_shared_memory
 
     @staticmethod
     def init_global_buffer(len_interaction: int,
@@ -77,7 +95,7 @@ class ReplayBuffers(object):
 
         return masked_buffer[idxs]
 
-    def random_sample_batch(self, from_shared_memory):
+    def random_sample_batch(self):
         """Random samples a batch from shared buffer to update the network's weights"""
         update_batch = self.random_sample_batch_(shared_buffer=self.shared_replay_buffer,
                                                  len_interaction=self.len_interaction,
@@ -85,5 +103,5 @@ class ReplayBuffers(object):
                                                  tot_num_cpus=self.tot_num_cpus,
                                                  batch_size=self.batch_size,
                                                  replacement=self.replacement,
-                                                 cpu_id=None if from_shared_memory else self.cpu_id)
+                                                 cpu_id=None if self.sample_from_shared_memory else self.cpu_id)
         return update_batch
