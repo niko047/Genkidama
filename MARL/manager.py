@@ -4,8 +4,6 @@ import random
 
 
 class Manager(object):
-    def __init__(self):
-        self.a = 5
 
     @staticmethod
     def initialize_semaphor(num_workers):
@@ -36,3 +34,9 @@ class Manager(object):
         output = Manager.f_true(*inputs)
 
         return torch.Tensor([*inputs, output]).to(torch.float32)
+
+    @staticmethod
+    def wait_for_green_light(semaphor: mp.Array, cpu_id: int):
+        semaphor[cpu_id] = True
+        while not torch.all(semaphor):
+            pass
