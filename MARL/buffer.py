@@ -11,16 +11,15 @@ class ReplayBuffers(object):
                  tot_num_cpus: int,
                  replacement: bool,
                  sample_from_shared_memory: bool):
-        '''
-
+        """
         :param shared_replay_buffer:    Tensor shared amongst CPU processes
         :param cpu_id:                  Unique id of the CPU using the current object
-        :param len_interaction:         len(X_i) + len(y_i), features + output length at any given state s_i
+        :param len_interaction:         len(X_i) + len(y_i), features + output length at any given state s_i (constant)
         :param num_iters:               Number of iterations after which the replay memory for CPU_{i} is full
         :param batch_size:              Batch size of the sampled batch for updating the net
         :param tot_num_cpus:            Total number of CPUs available within this same machine
         :param replacement:             Sampling method from replay memory
-        '''
+        """
         self.shared_replay_buffer = shared_replay_buffer
         self.cpu_id = cpu_id
         self.current_iter_number = 0
@@ -59,7 +58,7 @@ class ReplayBuffers(object):
 
         self.current_iter_number += 1
 
-    def is_buffer_full(self):
+    def is_buffer_full(self) -> bool:
         """Checks if the buffer for current CPU is full"""
         return True if (self.len_interaction - self.current_iter_number + 1) == 0 else False
 
@@ -95,7 +94,7 @@ class ReplayBuffers(object):
 
         return masked_buffer[idxs]
 
-    def random_sample_batch(self):
+    def random_sample_batch(self) -> torch.Tensor:
         """Random samples a batch from shared buffer to update the network's weights"""
         update_batch = self.random_sample_batch_(shared_buffer=self.shared_replay_buffer,
                                                  len_interaction=self.len_interaction,

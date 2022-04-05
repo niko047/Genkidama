@@ -44,25 +44,25 @@ class Server(object):
         connected = True
         while connected:
             # Args is how many bytes we expect to receive from the client
-            msg_received = new_conn_obj.recv(HEADER).decode(FORMAT)
+            msg_received = new_conn_obj.recv(64).decode(FORMAT)
             if msg_received:
 
                 print(f'[SERVER] Message received, is {msg_received}')
                 print('[SERVER] Sending one to client')
-                message_to_be_sent = msg_received.encode(FORMAT)
+                #message_to_be_sent = msg_received.encode(FORMAT)
 
-                msg_length = len(message)
-                send_length = str(msg_length).encode(FORMAT)
-                final_msg_length = send_length + b' ' * (self.len_header - len(send_length))
+                #msg_length = len(message)
+                #send_length = str(msg_length).encode(FORMAT)
+                #final_msg_length = send_length + b' ' * (self.len_header - len(send_length))
                 # Apply padding to the message
-                send_length = 64
+                #send_length = 64
                 #new_conn_obj.send()
-                new_conn_obj.send(message)
+                new_conn_obj.send(msg_received.encode(FORMAT))
                 print('[SERVER] Message sent')
 
-                if msg == DISCONNECT_MESSAGE:
+                if msg_received == DISCONNECT_MESSAGE:
                     connected = False
-                print(f'[{new_conn_addr}] : {msg}')
+                print(f'[{new_conn_addr}] : {msg_received}')
         new_conn_obj.close()
 
     def start_server(self, semaphor):
@@ -84,7 +84,7 @@ def strt(i, semaphor):
     else:
         while semaphor[0] != 1:
             pass
-        c = Client(address=ADDRESS, port=PORT, init_header=HEADER, format=FORMAT, len_header=HEADER)
+        c = Client(address=ADDRESS, port=PORT, init_header=HEADER, format=FORMAT, len_header=HEADER, cpu_id=i)
         c.server_interact()
 
 if __name__ == '__main__':
