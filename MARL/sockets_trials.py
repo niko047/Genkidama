@@ -11,17 +11,13 @@ Sketch of the algorithm:
 """
 
 import socket
-import threading
-import torch.multiprocessing as mp
-import numpy.distutils.cpuinfo
-import torch
 
 from server_trials import Client
 
 HEADER = 64
 PORT = 5050
 #Remember to put the pi address
-ADDRESS = '172.16.3.26'
+ADDRESS = '172.16.4.209'
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "disconnect"
 UPDATE_EVERY_X_CONTACTS = 5
@@ -81,7 +77,7 @@ def start_parent():
 
 def start_child():
     c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, child_net=None)
-    c.server_interact()
+    c.start_worker()
 
 if __name__ == '__main__':
-    start_parent()
+    start_child()

@@ -1,6 +1,4 @@
 import socket
-import torch.multiprocessing as mp
-import time
 import threading
 
 
@@ -13,12 +11,11 @@ ADDRESS = '172.16.3.26'
 
 class Client(object):
 
-    def __init__(self, address, port, init_header, len_header, cpu_id, child_net):
+    def __init__(self, address, port, init_header, len_header, child_net):
         self.address = address
         self.port = port
         self.init_header = init_header
         self.len_header = len_header
-        self.cpu_id = cpu_id
         self.child_net = child_net
 
         # Initializes the client socket
