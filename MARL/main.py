@@ -20,6 +20,15 @@ SAMPLE_FROM_SHARED_MEMORY: bool = True
 SAMPLE_WITH_REPLACEMENT: bool = False
 
 
+""" 
+TO-DO
+1. Obtain the parameters
+2. Flatten them all with a = torch.nn.utils.parameters_to_vector(glob_net.parameters())
+3. Encode the data for it to be sent over the network with BytesIO
+4. Decode the data once received back to a flat tensor
+5. Assign that flat tensor to the model's weights with torch.nn.utils.vector_to_parameters(a*1e5, glob_net.parameters())
+"""
+
 def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
     loc_net = ToyNet()
 

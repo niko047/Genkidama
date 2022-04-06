@@ -32,7 +32,7 @@ class Client(object):
 
     def server_interact(self):
         # TODO - Right now I am assuming that both endpoints know the length of the message being sent and received
-        message = self.get_message()
+        #message = self.get_message()
         # Encode the message
         encoded_message = message.encode(self.format)
         # Pad the encode message to make it fit within the allowed maximum size
@@ -45,19 +45,20 @@ class Client(object):
         # Apply padding to the message, later the below will tell the length of the weights
         #final_msg_length = send_length + b' ' * (self.len_header - len(send_length))
 
-        # Number of one-way interactions
-        n_inter = 0
+        len_msg_bytes = 64
         # Begins an uninterrupted communication with the server
         while True:
-            # In the first handshake we must convey the length of the objects we are exchanging
-            print(f'[CLIENT {self.cpu_id}] Sending the message {message}')
-            #if not(n_inter):
-            #    self.client.send(msg_length)
-            # Send the actual encoded message
+            receive = self.client.recv(len_msg_bytes)
+            if receive == 'disconnect':
+
+
+            # Decode the data that comes through
+
+            # Do the calculations here to get the data
+
+            # Now get the data ready to be sent
             self.client.send(padded_encoded_message)
-            print(f'[CLIENT {self.cpu_id}] The message has been sent')
-            # Update the count of the messages that have been sent
-            n_inter += 1
+
             # Now that it's sent, we need to wait for the response
             while True:
                 print(f'[CLIENT {self.cpu_id}] Waiting to receive the message')

@@ -42,27 +42,27 @@ class Server(object):
     def handle_client(self, new_conn_obj, new_conn_addr):
         print(f"[NEW CONNECTION] {new_conn_addr} just connected.")
         connected = True
+        handshake = False
+        len_msg_bytes = 64
+        # Start signal is just an empty set of bytes
+        start_message = b' ' * len_msg_bytes
         while connected:
-            # Args is how many bytes we expect to receive from the client
-            msg_received = new_conn_obj.recv(64).decode(FORMAT)
+            # At the first handshake
+            if not handshake:
+                new_conn_obj.send(start_message)
+                handshake = True
+            else:
+                # TODO - Take here the parameters of the network and pass them through the websocket
+                pass
+
+            # Now wait for them to start the process
+            msg_received : bytes = new_conn_obj.recv(len_msg_bytes)
             if msg_received:
-
-                print(f'[SERVER] Message received, is {msg_received}')
-                print('[SERVER] Sending one to client')
-                #message_to_be_sent = msg_received.encode(FORMAT)
-
-                #msg_length = len(message)
-                #send_length = str(msg_length).encode(FORMAT)
-                #final_msg_length = send_length + b' ' * (self.len_header - len(send_length))
-                # Apply padding to the message
-                #send_length = 64
-                #new_conn_obj.send()
-                new_conn_obj.send(msg_received.encode(FORMAT))
-                print('[SERVER] Message sent')
-
                 if msg_received == DISCONNECT_MESSAGE:
                     connected = False
                 print(f'[{new_conn_addr}] : {msg_received}')
+                # TODO - Take the parameters just received and update the network
+
         new_conn_obj.close()
 
     def start_server(self, semaphor):
@@ -77,7 +77,7 @@ class Server(object):
 
 
 def strt(i, semaphor):
-    if i == 0 :
+    if i == 0:
         s = Server(address=ADDRESS, port=PORT, init_header=HEADER)
         s.start_server(semaphor)
 
@@ -87,10 +87,10 @@ def strt(i, semaphor):
         c = Client(address=ADDRESS, port=PORT, init_header=HEADER, format=FORMAT, len_header=HEADER, cpu_id=i)
         c.server_interact()
 
+
 if __name__ == '__main__':
     semaphor = torch.Tensor([0])
     semaphor.share_memory_()
     procs = [mp.Process(target=strt, args=(i, semaphor)) for i in range(mp.cpu_count())]
     [p.start() for p in procs]
     [p.join() for p in procs]
-
