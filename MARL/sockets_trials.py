@@ -23,14 +23,16 @@ PORT = 5050
 ADDRESS = '172.16.4.209'
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "disconnect"
+UPDATE_EVERY_X_CONTACTS = 5
 
 
 class Server(object):
 
-    def __init__(self, address, port, init_header):
+    def __init__(self, address, port, init_header, parent_net):
         self.address = address
         self.port = port
         self.init_header = init_header
+        self.parent_net = parent_net
 
         # Initialize the socket obj
         self.socket_init()
@@ -41,27 +43,35 @@ class Server(object):
 
     def handle_client(self, new_conn_obj, new_conn_addr):
         print(f"[NEW CONNECTION] {new_conn_addr} just connected.")
-        connected = True
-        handshake = False
+        connected, handshake = True, False
         len_msg_bytes = 64
         # Start signal is just an empty set of bytes
-        start_message = b' ' * len_msg_bytes
+        start_end_message = b' ' * len_msg_bytes
+        # Every how many contacts client -> server have happened
+        interaction_count = 0
         while connected:
             # At the first handshake
             if not handshake:
-                new_conn_obj.send(start_message)
+                new_conn_obj.send(start_end_message)
                 handshake = True
-            else:
-                # TODO - Take here the parameters of the network and pass them through the websocket
-                pass
-
+                continue
             # Now wait for them to start the process
-            msg_received : bytes = new_conn_obj.recv(len_msg_bytes)
-            if msg_received:
-                if msg_received == DISCONNECT_MESSAGE:
+
+            weights_received: bytes = new_conn_obj.recv(len_msg_bytes)
+            if weights_received:
+                if weights_received == start_end_message:
                     connected = False
-                print(f'[{new_conn_addr}] : {msg_received}')
-                # TODO - Take the parameters just received and update the network
+                else:
+                    # Updates the parameters to the global net
+                    #self.parent_net.decode_implement_parameters(weights_received)
+                    print(f'[{new_conn_addr}] : {weights_received}')
+                    interaction_count += 1
+                    if interaction_count % UPDATE_EVERY_X_CONTACTS == 0:
+                        # Gets the parameters encoded in a bytes form
+                        #encoded_params = self.parent_net.encode_parameters()
+                        # Give back the weights to the contacting node
+                        encoded_params = b'1'*len_msg_bytes
+                        new_conn_obj.send(encoded_params)
 
         new_conn_obj.close()
 
@@ -78,13 +88,13 @@ class Server(object):
 
 def strt(i, semaphor):
     if i == 0:
-        s = Server(address=ADDRESS, port=PORT, init_header=HEADER)
+        s = Server(address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
         s.start_server(semaphor)
 
     else:
         while semaphor[0] != 1:
             pass
-        c = Client(address=ADDRESS, port=PORT, init_header=HEADER, format=FORMAT, len_header=HEADER, cpu_id=i)
+        c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, cpu_id=i, child_net=None)
         c.server_interact()
 
 

@@ -40,3 +40,4 @@ class Manager(object):
         semaphor[cpu_id] = True
         while not torch.all(semaphor):
             pass
+

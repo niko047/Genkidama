@@ -1,6 +1,7 @@
 import socket
 import torch.multiprocessing as mp
 import time
+import threading
 
 
 HEADER = 64
@@ -12,59 +13,53 @@ ADDRESS = '172.16.4.209'
 
 class Client(object):
 
-    def __init__(self, address, port, init_header, format, len_header, cpu_id):
+    def __init__(self, address, port, init_header, len_header, cpu_id, child_net):
         self.address = address
         self.port = port
         self.init_header = init_header
-        self.format = format
         self.len_header = len_header
         self.cpu_id = cpu_id
+        self.child_net = child_net
 
         # Initializes the client socket
-        self.socket_init()
+        self.worker_init()
 
+    '''
     def socket_init(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.address, self.port))
+    '''
+
+    def worker_init(self):
+        self.worker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.worker.bind((self.address, self.port))
 
     def get_message(self):
         return 'Hello server, im the client!'
 
-    def server_interact(self):
-        # TODO - Right now I am assuming that both endpoints know the length of the message being sent and received
-        #message = self.get_message()
-        # Encode the message
-        encoded_message = message.encode(self.format)
-        # Pad the encode message to make it fit within the allowed maximum size
-        padded_encoded_message = encoded_message + b' ' * (64 - len(encoded_message))
-
-        # Raw length of the message
-        #msg_length = len(message)
-        # Encoded length of the message
-        #send_length = str(msg_length).encode(self.format)
-        # Apply padding to the message, later the below will tell the length of the weights
-        #final_msg_length = send_length + b' ' * (self.len_header - len(send_length))
-
-        len_msg_bytes = 64
-        # Begins an uninterrupted communication with the server
+    def start_worker(self):
+        self.worker.listen()
+        print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
         while True:
-            receive = self.client.recv(len_msg_bytes)
-            if receive == 'disconnect':
+            conn, addr = self.worker.accept()
+            thread = threading.Thread(target=self.worker_interact, args=(conn, addr))
+            thread.start()
 
+    def server_interact(self, new_conn_obj, new_conn_addr):
+        connected, handshake = True, False
+        len_msg_bytes = 64
+        start_end_msg = b' ' * len_msg_bytes
+        num_interactions = 0
+        while connected:
+            while not handshake:
+                start_msg =  new_conn_obj.recv(len_msg_bytes)
+                if start_msg == start_end_msg:
+                    handshake = True
 
-            # Decode the data that comes through
+            # Start working now
+            if not num_interactions % 5 == 0:
+                new_conn_obj.send(b'1' * num_interactions)
+            else:
+                new_conn_obj.send(start_end_msg)
+        new_conn_obj.close()
 
-            # Do the calculations here to get the data
-
-            # Now get the data ready to be sent
-            self.client.send(padded_encoded_message)
-
-            # Now that it's sent, we need to wait for the response
-            while True:
-                print(f'[CLIENT {self.cpu_id}] Waiting to receive the message')
-                receive = self.client.recv(64)
-                if receive is not None:
-                    print(f'[CLIENT {self.cpu_id}] Message received, is {receive}')
-                    print(f'[CLIENT {self.cpu_id}] Sleeping for two seconds')
-                    time.sleep(2)
-                    break
