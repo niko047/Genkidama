@@ -8,7 +8,7 @@ HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = 'disconnect'
-ADDRESS = '172.16.4.209'
+ADDRESS = '172.16.3.26'
 
 
 class Client(object):
@@ -45,21 +45,21 @@ class Client(object):
             thread = threading.Thread(target=self.worker_interact, args=(conn, addr))
             thread.start()
 
-    def server_interact(self, new_conn_obj, new_conn_addr):
+    def worker_interact(self, conn_to_parent, addr_of_parent):
         connected, handshake = True, False
         len_msg_bytes = 64
         start_end_msg = b' ' * len_msg_bytes
         num_interactions = 0
         while connected:
             while not handshake:
-                start_msg =  new_conn_obj.recv(len_msg_bytes)
+                start_msg = conn_to_parent.recv(len_msg_bytes)
                 if start_msg == start_end_msg:
                     handshake = True
 
             # Start working now
             if not num_interactions % 5 == 0:
-                new_conn_obj.send(b'1' * num_interactions)
+                conn_to_parent.send(b'1' * num_interactions)
             else:
-                new_conn_obj.send(start_end_msg)
-        new_conn_obj.close()
+                conn_to_parent.send(start_end_msg)
+        conn_to_parent.close()
 

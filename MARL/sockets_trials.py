@@ -20,16 +20,17 @@ from server_trials import Client
 
 HEADER = 64
 PORT = 5050
-ADDRESS = '172.16.4.209'
+#Remember to put the pi address
+ADDRESS = '172.16.3.26'
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "disconnect"
 UPDATE_EVERY_X_CONTACTS = 5
 
 
-class Server(object):
+class Parent(object):
 
-    def __init__(self, address, port, init_header, parent_net):
-        self.address = address
+    def __init__(self, child_address, port, init_header, parent_net):
+        self.child_address = child_address
         self.port = port
         self.init_header = init_header
         self.parent_net = parent_net
@@ -37,12 +38,11 @@ class Server(object):
         # Initialize the socket obj
         self.socket_init()
 
-    def socket_init(self):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.address, self.port))
+    def parent_init(self):
+        self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.parent.connect(self.child_address)
 
-    def handle_client(self, new_conn_obj, new_conn_addr):
-        print(f"[NEW CONNECTION] {new_conn_addr} just connected.")
+    def handle_worker(self):
         connected, handshake = True, False
         len_msg_bytes = 64
         # Start signal is just an empty set of bytes
@@ -52,55 +52,36 @@ class Server(object):
         while connected:
             # At the first handshake
             if not handshake:
-                new_conn_obj.send(start_end_message)
+                self.parent.send(start_end_message)
                 handshake = True
                 continue
             # Now wait for them to start the process
 
-            weights_received: bytes = new_conn_obj.recv(len_msg_bytes)
+            weights_received: bytes = self.parent.recv(len_msg_bytes)
             if weights_received:
                 if weights_received == start_end_message:
                     connected = False
                 else:
                     # Updates the parameters to the global net
                     #self.parent_net.decode_implement_parameters(weights_received)
-                    print(f'[{new_conn_addr}] : {weights_received}')
                     interaction_count += 1
                     if interaction_count % UPDATE_EVERY_X_CONTACTS == 0:
                         # Gets the parameters encoded in a bytes form
                         #encoded_params = self.parent_net.encode_parameters()
                         # Give back the weights to the contacting node
                         encoded_params = b'1'*len_msg_bytes
-                        new_conn_obj.send(encoded_params)
+                        self.parent.send(encoded_params)
 
-        new_conn_obj.close()
-
-    def start_server(self, semaphor):
-        self.server.listen()
-        print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
-        semaphor[0] = 1
-        while True:
-            conn, addr = self.server.accept()
-            thread = threading.Thread(target=self.handle_client, args=(conn, addr))
-            thread.start()
-            print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+        self.parent.close()
 
 
-def strt(i, semaphor):
-    if i == 0:
-        s = Server(address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
-        s.start_server(semaphor)
+def start_parent():
+    s = Parent(address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
+    s.start_server()
 
-    else:
-        while semaphor[0] != 1:
-            pass
-        c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, cpu_id=i, child_net=None)
-        c.server_interact()
-
+def start_child():
+    c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, child_net=None)
+    c.server_interact()
 
 if __name__ == '__main__':
-    semaphor = torch.Tensor([0])
-    semaphor.share_memory_()
-    procs = [mp.Process(target=strt, args=(i, semaphor)) for i in range(mp.cpu_count())]
-    [p.start() for p in procs]
-    [p.join() for p in procs]
+    start_parent()
