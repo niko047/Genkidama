@@ -59,7 +59,7 @@ class Parent(object):
             print(f'Received weights at interaction_count {interaction_count}')
             if weights_received:
                 if weights_received == start_end_message:
-                    connected = False
+                    break
                 else:
                     # Updates the parameters to the global net
                     #self.parent_net.decode_implement_parameters(weights_received)

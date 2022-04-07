@@ -55,11 +55,21 @@ class Client(object):
                     handshake = True
                     print(f'[CHILD] Handshake done')
 
+            if num_interactions >= 2 :
+                print(f'[CHILD] Receiving message from parent')
+                recv_msg = conn_to_parent.recv(len_msg_bytes)
+                if recv_msg == start_end_msg:
+                    # Break and close the connection
+                    print(f'[CHILD] Closing the connection')
+                    break
+                else:
+                    print(f'[CHILD] Message valid and received')
+
             # Start working now
             if not num_interactions % 5 == 0:
                 print(f'[CHILD] About to send values to the parent.')
                 conn_to_parent.send(b'1' * num_interactions)
-            else:
-                conn_to_parent.send(start_end_msg)
+                num_interactions += 1
+
         conn_to_parent.close()
 
