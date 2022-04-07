@@ -35,12 +35,13 @@ class Client(object):
         return 'Hello server, im the client!'
 
     def start_worker(self):
-        self.worker.listen()
-        print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
-        while True:
-            conn, addr = self.worker.accept()
-            thread = threading.Thread(target=self.worker_interact, args=(conn, addr))
-            thread.start()
+        with self.worker as worker:
+            worker.listen()
+            print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
+            while True:
+                conn, addr = worker.accept()
+                thread = threading.Thread(target=self.worker_interact, args=(conn, addr))
+                thread.start()
 
     def worker_interact(self, conn_to_parent, addr_of_parent):
         connected, handshake = True, False

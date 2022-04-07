@@ -17,7 +17,7 @@ from server_trials import Client
 HEADER = 64
 PORT = 5050
 #Remember to put the pi address
-ADDRESS = '172.16.4.209'
+ADDRESS = '172.16.3.26'
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "disconnect"
 UPDATE_EVERY_X_CONTACTS = 5
@@ -32,11 +32,11 @@ class Parent(object):
         self.parent_net = parent_net
 
         # Initialize the socket obj
-        self.socket_init()
+        self.parent_init()
 
     def parent_init(self):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.parent.connect(self.child_address)
+        self.parent.connect((self.child_address, PORT))
 
     def handle_worker(self):
         connected, handshake = True, False
@@ -72,12 +72,12 @@ class Parent(object):
 
 
 def start_parent():
-    s = Parent(address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
-    s.start_server()
+    s = Parent(child_address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
+    s.handle_worker()
 
 def start_child():
     c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, child_net=None)
     c.start_worker()
 
 if __name__ == '__main__':
-    start_child()
+    start_parent()
