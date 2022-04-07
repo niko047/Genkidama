@@ -44,16 +44,19 @@ class Parent(object):
         # Start signal is just an empty set of bytes
         start_end_message = b' ' * len_msg_bytes
         # Every how many contacts client -> server have happened
-        interaction_count = 0
+        interaction_count = 1
         while connected:
             # At the first handshake
             if not handshake:
+                print(f'[PARENT] Sending handshake message')
                 self.parent.send(start_end_message)
                 handshake = True
+                print(f'[PARENT] Hansdhake done')
                 continue
             # Now wait for them to start the process
 
             weights_received: bytes = self.parent.recv(len_msg_bytes)
+            print(f'Received weights at interaction_count {interaction_count}')
             if weights_received:
                 if weights_received == start_end_message:
                     connected = False

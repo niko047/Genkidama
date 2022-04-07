@@ -47,15 +47,17 @@ class Client(object):
         connected, handshake = True, False
         len_msg_bytes = 64
         start_end_msg = b' ' * len_msg_bytes
-        num_interactions = 0
+        num_interactions = 1
         while connected:
             while not handshake:
                 start_msg = conn_to_parent.recv(len_msg_bytes)
                 if start_msg == start_end_msg:
                     handshake = True
+                    print(f'[CHILD] Handshake done')
 
             # Start working now
             if not num_interactions % 5 == 0:
+                print(f'[CHILD] About to send values to the parent.')
                 conn_to_parent.send(b'1' * num_interactions)
             else:
                 conn_to_parent.send(start_end_msg)
