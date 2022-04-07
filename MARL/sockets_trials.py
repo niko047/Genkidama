@@ -55,17 +55,19 @@ class Parent(object):
                 if handshake_msg == start_end_message:
                     handshake = True
                     print(f'[PARENT] Hansdhake done')
-                    # Now wait for them to start the process
-                    #continue
 
-            # Takes the weights out of the network and sends them over
+            # TODO - Takes the weights out of the network and sends them over, change this fake msg
             old_weights = continue_msg
             print(f'[PARENT] Sending old weights at iteration {interaction_count}')
+
+            # Sending a copy of the global net parameters to the child
             self.parent.send(old_weights)
 
+            # Receiving the new weights coming from the child
             new_weights = self.parent.recv(len_msg_bytes)
             print(f'[PARENT] Received new weights at iteration {interaction_count}')
 
+            # Simple count of the number of interactions
             interaction_count += 1
             if new_weights == start_end_message:
                 print(f'[PARENT] About to close the connection on the parent side')

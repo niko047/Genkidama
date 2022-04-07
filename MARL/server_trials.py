@@ -63,11 +63,12 @@ class Client(object):
             # Wait for weights to be received
             recv_weights = conn_to_parent.recv(len_msg_bytes)
 
-            # TODO - Updates the network
-            # Does some calculations
+            # TODO - Updates the global network of the machine and in turn the single cores at cascade
+            # Does some calculations, change this fake like to interaction between the agent and the environment
             new_weights = continue_msg
-
+            # Just a counter to keep track of the number of interactions
             num_interactions += 1
+            # Keep on going until a certain stopping condition is met
             if num_interactions != 20:
                 # Sends the new weights over the network to the parent
                 print(f'[CHILD] Sending data at iteration {num_interactions}')
@@ -76,4 +77,5 @@ class Client(object):
                 conn_to_parent.send(start_end_msg)
                 print(f'[CHILD] Closing the connection with the parent')
                 connected= False
+        # Close the connection and detach parent from child
         conn_to_parent.close()
