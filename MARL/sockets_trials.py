@@ -56,7 +56,7 @@ class Parent(object):
             # Now wait for them to start the process
 
             weights_received: bytes = self.parent.recv(len_msg_bytes)
-            print(f'Received weights at interaction_count {interaction_count}')
+            print(f'Received weights at interaction_count {interaction_count} : {weights_received}')
             if weights_received:
                 if weights_received == start_end_message:
                     break
@@ -68,7 +68,7 @@ class Parent(object):
                         # Gets the parameters encoded in a bytes form
                         #encoded_params = self.parent_net.encode_parameters()
                         # Give back the weights to the contacting node
-                        encoded_params = b'1'*len_msg_bytes
+                        encoded_params = b'1' * len_msg_bytes
                         self.parent.send(encoded_params)
 
         self.parent.close()

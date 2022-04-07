@@ -47,6 +47,7 @@ class Client(object):
         connected, handshake = True, False
         len_msg_bytes = 64
         start_end_msg = b' ' * len_msg_bytes
+        continue_msg = b'1' * len_msg_bytes
         num_interactions = 1
         while connected:
             while not handshake:
@@ -68,7 +69,7 @@ class Client(object):
             # Start working now
             if not num_interactions % 5 == 0:
                 print(f'[CHILD] About to send values to the parent.')
-                conn_to_parent.send(b'1' * num_interactions)
+                conn_to_parent.send(continue_msg)
                 num_interactions += 1
 
         conn_to_parent.close()
