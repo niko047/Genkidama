@@ -66,7 +66,7 @@ class Parent(object):
             new_weights = self.parent.recv(len_msg_bytes)
             print(f'[PARENT] Received new weights at iteration {interaction_count}')
 
-
+            interaction_count += 1
             if new_weights == start_end_message:
                 print(f'[PARENT] About to close the connection on the parent side')
                 connected=False
