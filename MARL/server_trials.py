@@ -51,10 +51,32 @@ class Client(object):
         num_interactions = 1
         while connected:
             while not handshake:
+                # Waits for some parent to send a handshake
                 start_msg = conn_to_parent.recv(len_msg_bytes)
+                # If the handshake is accepted
                 if start_msg == start_end_msg:
+                    # Makes contact and sends confirmation
+                    conn_to_parent.send(start_end_msg)
                     handshake = True
                     print(f'[CHILD] Handshake done')
+
+            # Wait for weights to be received
+            recv_weights = conn_to_parent.recv(len_msg_bytes)
+
+            # TODO - Updates the network
+            # Does some calculations
+            new_weights = continue_msg
+
+            # Sends the new weights over the network to the parent
+            conn_to_parent.send(new_weights)
+
+            num_interactions += 1
+
+
+
+
+
+
 
             if num_interactions >= 2 :
                 print(f'[CHILD] Receiving message from parent')

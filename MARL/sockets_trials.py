@@ -43,6 +43,7 @@ class Parent(object):
         len_msg_bytes = 64
         # Start signal is just an empty set of bytes
         start_end_message = b' ' * len_msg_bytes
+        continue_msg = b'1' * len_msg_bytes
         # Every how many contacts client -> server have happened
         interaction_count = 1
         while connected:
@@ -50,26 +51,24 @@ class Parent(object):
             if not handshake:
                 print(f'[PARENT] Sending handshake message')
                 self.parent.send(start_end_message)
-                handshake = True
-                print(f'[PARENT] Hansdhake done')
-                continue
-            # Now wait for them to start the process
+                handshake_msg = self.parent.recv(len_msg_bytes)
+                if handshake_msg == start_end_message:
+                    handshake = True
+                    print(f'[PARENT] Hansdhake done')
+                    # Now wait for them to start the process
+                    #continue
 
-            weights_received: bytes = self.parent.recv(len_msg_bytes)
-            print(f'Received weights at interaction_count {interaction_count} : {weights_received}')
-            if weights_received:
-                if weights_received == start_end_message:
-                    break
-                else:
-                    # Updates the parameters to the global net
-                    #self.parent_net.decode_implement_parameters(weights_received)
-                    interaction_count += 1
-                    if interaction_count % UPDATE_EVERY_X_CONTACTS == 0:
-                        # Gets the parameters encoded in a bytes form
-                        #encoded_params = self.parent_net.encode_parameters()
-                        # Give back the weights to the contacting node
-                        encoded_params = b'1' * len_msg_bytes
-                        self.parent.send(encoded_params)
+            # Takes the weights out of the network and sends them over
+            old_weights = continue_msg
+            self.parent.send(old_weights)
+
+            new_weights = self.parent.recv(len_msg_bytes)
+
+            # Updates the network parameters
+
+            interaction_count += 1
+            if interaction_count == 20:
+                break
 
         self.parent.close()
 
