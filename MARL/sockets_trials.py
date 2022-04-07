@@ -60,15 +60,18 @@ class Parent(object):
 
             # Takes the weights out of the network and sends them over
             old_weights = continue_msg
+            print(f'[PARENT] Sending old weights at iteration {interaction_count}')
             self.parent.send(old_weights)
 
             new_weights = self.parent.recv(len_msg_bytes)
+            print(f'[PARENT] Received new weights at iteration {interaction_count}')
+
+
+            if new_weights == start_end_message:
+                print(f'[PARENT] About to close the connection on the parent side')
+                connected=False
 
             # Updates the network parameters
-
-            interaction_count += 1
-            if interaction_count == 20:
-                break
 
         self.parent.close()
 

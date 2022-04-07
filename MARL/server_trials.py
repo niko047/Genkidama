@@ -67,10 +67,19 @@ class Client(object):
             # Does some calculations
             new_weights = continue_msg
 
-            # Sends the new weights over the network to the parent
-            conn_to_parent.send(new_weights)
-
             num_interactions += 1
+            if num_interactions != 20:
+                # Sends the new weights over the network to the parent
+                print(f'[CHILD] Sending data at iteration {num_interactions}')
+                conn_to_parent.send(new_weights)
+            else:
+                conn_to_parent.send(start_end_msg)
+                print(f'[CHILD] Closing the connection with the parent')
+                conn_to_parent.close()
+
+
+
+
 
 
 
