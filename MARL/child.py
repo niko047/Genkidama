@@ -21,12 +21,6 @@ class Client(object):
         # Initializes the client socket
         self.worker_init()
 
-    '''
-    def socket_init(self):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect((self.address, self.port))
-    '''
-
     def worker_init(self):
         self.worker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.worker.bind((self.address, self.port))
@@ -79,3 +73,11 @@ class Client(object):
                 connected= False
         # Close the connection and detach parent from child
         conn_to_parent.close()
+
+
+def start_child():
+    c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, child_net=None)
+    c.start_worker()
+
+if __name__ == '__main__':
+    start_child()

@@ -12,8 +12,6 @@ Sketch of the algorithm:
 
 import socket
 
-from server_trials import Client
-
 HEADER = 64
 PORT = 5050
 #Remember to put the pi address
@@ -81,10 +79,6 @@ class Parent(object):
 def start_parent():
     s = Parent(child_address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
     s.handle_worker()
-
-def start_child():
-    c = Client(address=ADDRESS, port=PORT, init_header=HEADER, len_header=HEADER, child_net=None)
-    c.start_worker()
 
 if __name__ == '__main__':
     start_parent()
