@@ -41,7 +41,9 @@ class Client(object):
     def worker_interact(self, conn_to_parent, addr_of_parent):
         connected, handshake = True, False
         old_weights_bytes = self.child_net.encode_parameters()
+        print(f'Old weights are {old_weights_bytes}')
         len_msg_bytes = len(old_weights_bytes)
+        print(f'Length of weights is {len_msg_bytes}')
         start_end_msg = b' ' * len_msg_bytes
         continue_msg = b'1' * len_msg_bytes
         num_interactions = 1
@@ -58,6 +60,7 @@ class Client(object):
 
             # Wait for weights to be received
             recv_weights_bytes = conn_to_parent.recv(len_msg_bytes)
+            print(recv_weights_bytes)
 
             # TODO - Updates the global network of the machine and in turn the single cores at cascade
             self.child_net.decode_implement_parameters(recv_weights_bytes)

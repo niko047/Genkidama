@@ -41,8 +41,11 @@ class Parent(object):
 
     def handle_worker(self):
         connected, handshake = True, False
+
         old_weights_bytes = self.parent_net.encode_parameters()
+        print(f'Old weights bytes are : {old_weights_bytes}')
         len_msg_bytes = len(old_weights_bytes)
+        print(f'Length of weights is {len_msg_bytes}')
         # Start signal is just an empty set of bytes
         start_end_message = b' ' * len_msg_bytes
         # Every how many contacts client -> server have happened
