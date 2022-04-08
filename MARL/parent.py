@@ -12,6 +12,8 @@ Sketch of the algorithm:
 
 import socket
 
+from neural_net import ToyNet
+
 HEADER = 64
 PORT = 5050
 #Remember to put the pi address
@@ -27,7 +29,8 @@ class Parent(object):
         self.child_address = child_address
         self.port = port
         self.init_header = init_header
-        self.parent_net = parent_net
+        # Initializes an object from the class parent_net
+        self.parent_net = parent_net()
 
         # Initialize the socket obj
         self.parent_init()
@@ -38,10 +41,10 @@ class Parent(object):
 
     def handle_worker(self):
         connected, handshake = True, False
-        len_msg_bytes = 64
+        old_weights_bytes = self.parent_net.encode_parameters()
+        len_msg_bytes = len(old_weights_bytes)
         # Start signal is just an empty set of bytes
         start_end_message = b' ' * len_msg_bytes
-        continue_msg = b'1' * len_msg_bytes
         # Every how many contacts client -> server have happened
         interaction_count = 1
         while connected:
@@ -54,20 +57,22 @@ class Parent(object):
                     handshake = True
                     print(f'[PARENT] Hansdhake done')
 
-            # TODO - Takes the weights out of the network and sends them over, change this fake msg
-            old_weights = continue_msg
+            # Gets the current weights of the network
             print(f'[PARENT] Sending old weights at iteration {interaction_count}')
 
             # Sending a copy of the global net parameters to the child
-            self.parent.send(old_weights)
+            self.parent.send(old_weights_bytes)
 
             # Receiving the new weights coming from the child
-            new_weights = self.parent.recv(len_msg_bytes)
-            print(f'[PARENT] Received new weights at iteration {interaction_count}')
+            new_weights_bytes = self.parent.recv(len_msg_bytes)
+            print(f'[PARENT] Received new weights at iteration {interaction_count}, length: {len(new_weights_bytes)}')
+
+            #Upload the new weights to the network
+            self.parent_net.decode_implement_parameters(new_weights_bytes)
 
             # Simple count of the number of interactions
             interaction_count += 1
-            if new_weights == start_end_message:
+            if new_weights_bytes == start_end_message:
                 print(f'[PARENT] About to close the connection on the parent side')
                 connected=False
 
@@ -77,7 +82,7 @@ class Parent(object):
 
 
 def start_parent():
-    s = Parent(child_address=ADDRESS, port=PORT, init_header=HEADER, parent_net=None)
+    s = Parent(child_address=ADDRESS, port=PORT, init_header=HEADER, parent_net=ToyNet)
     s.handle_worker()
 
 if __name__ == '__main__':
