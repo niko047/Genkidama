@@ -13,9 +13,9 @@ class ToyNet(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(in_features=2, out_features=32)
-        self.fc2 = nn.Linear(in_features=32, out_features=32)
-        self.fc3 = nn.Linear(in_features=32, out_features=1)
+        self.fc1 = nn.Linear(in_features=2, out_features=128)
+        self.fc2 = nn.Linear(in_features=128, out_features=128)
+        self.fc3 = nn.Linear(in_features=128, out_features=1)
         # Initializes the buffer used to encode and decode the params
 
         ToyNet.initialize_layers([self.fc1, self.fc2, self.fc3])
@@ -32,7 +32,8 @@ class ToyNet(nn.Module):
         flattened_params = parameters_to_vector(self.parameters())
         torchsave(flattened_params, buff)
         buff.seek(0)
-        return buff.read()
+        r = buff.read()
+        return r
 
     def decode_implement_parameters(self, b: bytes):
         """Gets the encoded parameters of the networks in bytes, decodes them and pugs them into the net"""
