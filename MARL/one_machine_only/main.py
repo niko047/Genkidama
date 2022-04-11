@@ -1,7 +1,7 @@
 import torch
 import torch.multiprocessing as mp
 
-from MARL.buffer import ReplayBuffers
+from ReplayBuffer.buffer import ReplayBuffers
 
 mp.set_start_method('spawn', force=True)
 

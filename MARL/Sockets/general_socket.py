@@ -1,6 +1,3 @@
-import socket
-
-
 class GeneralSocket(object):
 
     def __init__(self, address, port, neural_net):

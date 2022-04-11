@@ -5,8 +5,8 @@ import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 
-from MARL.buffer import ReplayBuffers
-from MARL.shared_optims import SharedAdam
+from ReplayBuffer.buffer import ReplayBuffers
+from Optims.shared_optims import SharedAdam
 from main import Manager
 
 mp.set_start_method('spawn', force=True)

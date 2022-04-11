@@ -11,19 +11,7 @@ Sketch of the algorithm:
 """
 
 import socket
-
-from Nets.neural_net import ToyNet
-from general_socket import GeneralSocket
-
-HEADER = 64
-PORT = 5050
-#Remember to put the pi address
-ADDRESS = '172.16.3.26'
-LOCAL_ADDRESS = '127.0.0.1'
-WLAN_SELF_ADDRESS = '10.50.73.194'
-FORMAT = 'utf-8'
-DISCONNECT_MESSAGE = "disconnect"
-UPDATE_EVERY_X_CONTACTS = 5
+from .general_socket import GeneralSocket
 
 
 class Parent(GeneralSocket):
@@ -35,7 +23,7 @@ class Parent(GeneralSocket):
 
     def parent_init(self):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.parent.connect((self.address, PORT))
+        self.parent.connect((self.address, self.port))
 
     def handle_worker(self):
         with self.parent as parent:
@@ -92,17 +80,3 @@ class Parent(GeneralSocket):
                     # Updates the network parameters
             print(f'[PARENT] Correctly closing parent')
             parent.close()
-
-
-def start_parent():
-    s = Parent(child_address=WLAN_SELF_ADDRESS, port=PORT, parent_net=ToyNet)
-    s.handle_worker()
-
-if __name__ == '__main__':
-    from timeit import default_timer as timer
-
-    start = timer()
-
-    start_parent()
-    end = timer()
-    print(end - start)
