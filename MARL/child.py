@@ -1,6 +1,6 @@
 import socket
 import threading
-from neural_net import ToyNet
+from Nets.neural_net import ToyNet
 
 
 HEADER = 64
@@ -8,7 +8,7 @@ PORT = 5050
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = 'disconnect'
 LOCAL_ADDRESS = '127.0.0.1'
-WLAN_SELF_ADDRESS = '172.16.4.209'
+WLAN_SELF_ADDRESS = '10.50.73.194'
 ADDRESS = '172.16.3.26'
 
 
@@ -51,7 +51,9 @@ class Client(object):
         while connected:
             while not handshake:
                 # Waits for some parent to send a handshake
-                start_msg_bytes = conn_to_parent.recv(len_msg_bytes)
+                start_msg_bytes = b''
+                while len(start_msg_bytes) < len_msg_bytes:
+                    start_msg_bytes += conn_to_parent.recv(len_msg_bytes)
                 # If the handshake is accepted
                 if start_msg_bytes == start_end_msg:
                     # Makes contact and sends confirmation
@@ -59,7 +61,7 @@ class Client(object):
                     handshake = True
                     print(f'[CHILD] Handshake done')
                 else:
-                    print(f'[CHILD] The two were different, start_end_msg {len(start_end_msg)}, start_msg_bytes {len(start_msg_bytes)}')
+                    print(f'[CHILD] Error during hansdhake')
 
             # Wait for weights to be received
             recv_weights_bytes = b''
@@ -68,9 +70,7 @@ class Client(object):
                 recv_weights_bytes += conn_to_parent.recv(len_msg_bytes)
 
 
-            # TODO - Updates the global network of the machine and in turn the single cores at cascade
             self.child_net.decode_implement_parameters(recv_weights_bytes)
-            #del(recv_weights_bytes)
 
             # Does some calculations, change this fake like to interaction between the agent and the environment
             # TODO

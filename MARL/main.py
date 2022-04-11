@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from buffer import ReplayBuffers
 from manager import Manager
 from shared_optims import SharedAdam
-from neural_net import ToyNet
+from Nets.neural_net import ToyNet
 
 mp.set_start_method('spawn', force=True)
 

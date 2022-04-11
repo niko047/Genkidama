@@ -12,40 +12,36 @@ Sketch of the algorithm:
 
 import socket
 
-from neural_net import ToyNet
+from Nets.neural_net import ToyNet
+from general_socket import GeneralSocket
 
 HEADER = 64
 PORT = 5050
 #Remember to put the pi address
 ADDRESS = '172.16.3.26'
 LOCAL_ADDRESS = '127.0.0.1'
-WLAN_SELF_ADDRESS = '172.16.4.209'
+WLAN_SELF_ADDRESS = '10.50.73.194'
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "disconnect"
 UPDATE_EVERY_X_CONTACTS = 5
 
 
-class Parent(object):
+class Parent(GeneralSocket):
 
-    def __init__(self, child_address, port, init_header, parent_net):
-        self.child_address = child_address
-        self.port = port
-        self.init_header = init_header
-        # Initializes an object from the class parent_net
-        self.parent_net = parent_net()
-
+    def __init__(self, child_address, port, parent_net):
+        super().__init__(address=child_address, port=port, neural_net=parent_net)
         # Initialize the socket obj
         self.parent_init()
 
     def parent_init(self):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.parent.connect((self.child_address, PORT))
+        self.parent.connect((self.address, PORT))
 
     def handle_worker(self):
         with self.parent as parent:
             connected, handshake = True, False
 
-            old_weights_bytes = self.parent_net.encode_parameters()
+            old_weights_bytes = self.neural_net.encode_parameters()
             #print(f'Old weights bytes are : {old_weights_bytes}')
             len_msg_bytes = len(old_weights_bytes)
             print(f'Length of weights is {len_msg_bytes}')
@@ -87,7 +83,7 @@ class Parent(object):
                     break
 
                 #Upload the new weights to the network
-                self.parent_net.decode_implement_parameters(new_weights_bytes)
+                self.neural_net.decode_implement_parameters(new_weights_bytes)
 
                 # Simple count of the number of interactions
                 interaction_count += 1
@@ -99,7 +95,7 @@ class Parent(object):
 
 
 def start_parent():
-    s = Parent(child_address=WLAN_SELF_ADDRESS, port=PORT, init_header=HEADER, parent_net=ToyNet)
+    s = Parent(child_address=WLAN_SELF_ADDRESS, port=PORT, parent_net=ToyNet)
     s.handle_worker()
 
 if __name__ == '__main__':
