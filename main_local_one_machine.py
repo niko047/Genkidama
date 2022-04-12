@@ -2,10 +2,10 @@ import torch
 import torch.multiprocessing as mp
 import torch.nn.functional as F
 
-from ReplayBuffer.buffer import ReplayBuffers
-from Manager.manager import Manager
-from Optims.shared_optims import SharedAdam
-from Nets.neural_net import ToyNet
+from MARL.ReplayBuffer.buffer import ReplayBuffers
+from MARL.Manager.manager import Manager
+from MARL.Optims.shared_optims import SharedAdam
+from MARL.Nets.neural_net import ToyNet
 
 mp.set_start_method('spawn', force=True)
 
@@ -19,7 +19,6 @@ BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = True
 SAMPLE_WITH_REPLACEMENT: bool = False
 
-
 """ 
 TO-DO
 1. Obtain the parameters
@@ -28,6 +27,7 @@ TO-DO
 4. Decode the data once received back to a flat tensor
 5. Assign that flat tensor to the model's weights with torch.nn.utils.vector_to_parameters(a*1e5, glob_net.parameters())
 """
+
 
 def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
     loc_net = ToyNet()
@@ -57,7 +57,7 @@ def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
                     Manager.wait_for_green_light(semaphor=semaphor, cpu_id=i)
 
                 # Random samples a batch
-                sampled_batch = b.random_sample_batch(from_shared_memory=True)
+                sampled_batch = b.random_sample_batch()
                 # Forward pass of the neural net, until the output columns, in this case last one
                 loc_output = loc_net.forward(sampled_batch[:, :-1])
                 # Calculates the loss between target and predict
@@ -118,6 +118,6 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     plt.plot(res)
-    plt.ylabel('Reward value')
+    plt.ylabel('Loss')
     plt.xlabel('Step of the NN')
     plt.show()
