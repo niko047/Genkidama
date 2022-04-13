@@ -16,3 +16,6 @@ class SharedAdam(torch.optim.Adam):
                 # share in memory
                 state['exp_avg'].share_memory_()
                 state['exp_avg_sq'].share_memory_()
+
+
+# TODO - Create a new shared optimizer instance of SGD

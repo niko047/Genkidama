@@ -1,12 +1,12 @@
 """
 
-One central CPU core (1/4) is going to be responsible for the updates of all the other worker cores.
-All of the nodes (even the workers) at first are going to be initialized as websocket servers)
 Sketch of the algorithm:
+0. Initialize a child in every raspberry (a websocket server listening)
 1. The central server is going to trigger the start of the algorithm by sending a message to all raspberrys.
-2. The workers are going to drop their listening server and from now on they become clients.
-3. At episode end (within same Pi) compute gradients and update the central node through websockets
-4. Repeat 3 until convergence
+2. Every X steps (within same Pi) compute gradients and update local machine network
+3. Every Y>=X steps, gather the gradients and send them over to the parent socket for general update
+4. Pull gradients from parent socket and send them back to worker for diffusion
+5. Repeat until covergence
 
 """
 
@@ -71,7 +71,7 @@ class Parent(GeneralSocket):
                     break
 
                 #Upload the new weights to the network
-                self.neural_net.decode_implement_parameters(new_weights_bytes)
+                self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.01)
 
                 # Simple count of the number of interactions
                 interaction_count += 1

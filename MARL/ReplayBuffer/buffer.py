@@ -104,3 +104,5 @@ class ReplayBuffers(object):
                                                  replacement=self.replacement,
                                                  cpu_id=None if self.sample_from_shared_memory else self.cpu_id)
         return update_batch
+
+    # TODO - Add another method which separates the X and the Y, since they're all together in the buffer's row

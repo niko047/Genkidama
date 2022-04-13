@@ -56,7 +56,8 @@ class Client(GeneralSocket):
                 print(f'Not full yet')
                 recv_weights_bytes += conn_to_parent.recv(len_msg_bytes)
 
-            self.neural_net.decode_implement_parameters(recv_weights_bytes)
+            # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
+            self.neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
             # Does some calculations, change this fake like to interaction between the agent and the environment
             # TODO
