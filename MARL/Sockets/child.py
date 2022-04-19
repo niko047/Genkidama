@@ -5,8 +5,8 @@ from .general_socket import GeneralSocket
 
 class Client(GeneralSocket):
 
-    def __init__(self, address, port, child_net, environment):
-        super().__init__(address=address, port=port, neural_net=child_net, environment=environment)
+    def __init__(self, address, port, child_net):
+        super().__init__(address=address, port=port, neural_net=child_net)
 
         # Initializes the client socket
         self.worker_init()
