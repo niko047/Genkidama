@@ -50,7 +50,7 @@ def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
             b.record_interaction(tensor_tuple)
 
             # Every once in a while
-            if (j + 1) % 2 == 0:
+            if (j + 1) % 2 == 0: #todo 5 gradients step for eGSD
                 # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                 if not NUM_EPISODES:
                     # Do this only for the first absolute run
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     buffer = ReplayBuffers.init_global_buffer(len_interaction=LEN_INPUTS_X + LEN_OUTPUTS_Y,  # 2 inputs + 1 output
                                               num_iters=LEN_ITERATIONS,
                                               tot_num_cpus=NUM_CPUS,
-                                              dtype=torch.float32)
+                                              dtype=torch.float16)
     # Creates a starting semaphor
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
