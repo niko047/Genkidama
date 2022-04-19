@@ -53,7 +53,6 @@ class Client(GeneralSocket):
             # Wait for weights to be received
             recv_weights_bytes = b''
             while len(recv_weights_bytes) < len_msg_bytes:
-                print(f'Not full yet')
                 recv_weights_bytes += conn_to_parent.recv(len_msg_bytes)
 
             # Alpha = 1 means it's going to completely overwrite the child params with the parent ones

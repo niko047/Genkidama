@@ -62,7 +62,6 @@ class Parent(GeneralSocket):
                 new_weights_bytes = b''
                 while len(new_weights_bytes) < len_msg_bytes:
                     new_weights_bytes += parent.recv(len_msg_bytes)
-                    print('Not full yet')
                 print(f'[PARENT] Received new weights at iteration {interaction_count}, length: {len(new_weights_bytes)}')
 
                 if new_weights_bytes == start_end_message:
