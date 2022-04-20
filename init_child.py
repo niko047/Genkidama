@@ -1,5 +1,5 @@
-from MARL.Nets.neural_net import ToyNet
-from MARL.Sockets.child import Client
+from MARL.Nets import ToyNet
+from MARL.Sockets import Client
 
 import argparse
 

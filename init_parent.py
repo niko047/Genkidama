@@ -1,5 +1,5 @@
-from MARL.Sockets.parent import Parent
-from MARL.Nets.neural_net import ToyNet
+from MARL.Sockets import Parent
+from MARL.Nets import ToyNet
 from timeit import default_timer as timer
 
 import argparse

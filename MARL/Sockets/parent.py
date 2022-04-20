@@ -43,7 +43,16 @@ class Parent(GeneralSocket):
         return True
 
     def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
-        """Handles what's up until the connection is alive"""
+        """Handles what's up until the connection is alive:
+        - Handshake with the parent
+        - While stopping condition is met
+            - While all cpu cores are not done
+                - Generate data and let the agent in the environment for each CPU
+            - Gather gradients and update the local network
+            - Send gradients to the central node and wait for response
+            - Update all cores with the new parameters
+        - Close connection
+        """
         interaction_count = 1
         has_handshake_happened = False
 
@@ -54,8 +63,12 @@ class Parent(GeneralSocket):
 
             print(f'[PARENT] Sending old weights at iteration {interaction_count}')
 
+            # TODO - Here interact with the environment
+            # handle_all_cpu_cores
+
             # Sending a copy of the global net parameters to the child
             parent.send(old_weights_bytes)
+
 
             # Receiving the new weights coming from the child
             new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,

@@ -2,7 +2,7 @@ import torch
 import torch.multiprocessing as mp
 import torch.nn.functional as F
 
-from MARL.ReplayBuffer.buffer import ReplayBuffers
+from MARL.ReplayBuffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Optims.shared_optims import SharedAdam
 from MARL.Nets.neural_net import ToyNet

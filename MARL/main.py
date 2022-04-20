@@ -2,10 +2,10 @@ import torch
 import torch.multiprocessing as mp
 import torch.nn.functional as F
 
-from ReplayBuffer.buffer import ReplayBuffers
-from Manager.manager import Manager
-from Optims.shared_optims import SharedAdam
-from Nets.neural_net import ToyNet
+from MARL.ReplayBuffer import ReplayBuffers
+from MARL.Manager import Manager
+from MARL.Optims import SharedAdam
+from MARL.Nets import ToyNet
 
 mp.set_start_method('spawn', force=True)
 
