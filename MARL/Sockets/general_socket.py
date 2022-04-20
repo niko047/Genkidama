@@ -6,12 +6,12 @@ class GeneralSocket(object):
         self.neural_net = neural_net()
 
     @staticmethod
-    def wait_msg_received(len_true_msg, len_arriving_msg, gsocket):
+    def wait_msg_received(len_true_msg, gsocket):
         """Wait to receive the entirety of the message and accumulates in in a bytes obj"""
         # Initializes empty bytes object
         msg = b''
 
-        while len_arriving_msg < len_true_msg:
+        while len(msg) < len_true_msg:
             # Keep stacking up bytes information
             msg += gsocket.recv(len_true_msg)
 

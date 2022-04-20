@@ -25,57 +25,61 @@ class Parent(GeneralSocket):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.parent.connect((self.address, self.port))
 
+    def get_start_end_msg(self):
+        encoded_params = self.neural_net.encode_parameters()
+        len_msg_bytes = len(encoded_params)
+        print(f"Weights of the network are {len_msg_bytes} Bytes.")
+        start_end_msg = b' ' * len_msg_bytes
+        return len_msg_bytes, start_end_msg, encoded_params
+
+    def check_handshake(self, parent, start_end_msg, len_msg_bytes):
+        """Checks for the first interaction between child and parent"""
+        print(f'[PARENT] Sending handshake message')
+        parent.send(start_end_msg)
+        print(f'[PARENT] Length of msg being sent at handshake is len : {len(start_end_msg)}')
+        handshake_msg = b''
+        while len(handshake_msg) < len_msg_bytes:
+            handshake_msg += parent.recv(len_msg_bytes)
+        return True
+
+    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
+        """Handles what's up until the connection is alive"""
+        interaction_count = 1
+        has_handshake_happened = False
+
+        # Until it receives the ending message from the child
+        while True:
+            if not has_handshake_happened:
+                has_handshake_happened = self.check_handshake(parent, start_end_msg, len_msg_bytes)
+
+            print(f'[PARENT] Sending old weights at iteration {interaction_count}')
+
+            # Sending a copy of the global net parameters to the child
+            parent.send(old_weights_bytes)
+
+            # Receiving the new weights coming from the child
+            new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,
+                                                                gsocket=parent)
+
+            # If the message received from the child is the one signaling the end, then close the connection
+            if new_weights_bytes == start_end_msg:
+                break
+
+            # Upload the new weights to the network
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.01)
+
+            # Simple count of the number of interactions
+            interaction_count += 1
+
     def handle_worker(self):
+        """Handles the worker, all the functionality is inside here"""
         with self.parent as parent:
-            connected, handshake = True, False
+            # Gets some starting information to initialize the connection
+            len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
 
-            old_weights_bytes = self.neural_net.encode_parameters()
-            #print(f'Old weights bytes are : {old_weights_bytes}')
-            len_msg_bytes = len(old_weights_bytes)
-            print(f'Length of weights is {len_msg_bytes}')
-            # Start signal is just an empty set of bytes
-            start_end_message = b' ' * len_msg_bytes
-            # Every how many contacts client -> server have happened
-            interaction_count = 1
-            while connected:
-                # At the first handshake
-                if not handshake:
-                    print(f'[PARENT] Sending handshake message')
-                    parent.send(start_end_message)
-                    print(f'[PARENT] Length of msg being sent at handshake is len : {len(start_end_message)}')
-                    handshake_msg = b''
-                    while len(handshake_msg) < len_msg_bytes:
-                        handshake_msg += parent.recv(len_msg_bytes)
-                    if handshake_msg == start_end_message:
-                        handshake = True
-                        print(f'[PARENT] Hansdhake done')
-                    else:
-                        print(f'[PARENT] Handshake has failed, length of handshake message is : {len(handshake_msg)}')
+            # Interaction has started here, all the talking is done inside this function
+            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes)
 
-                # Gets the current weights of the network
-                print(f'[PARENT] Sending old weights at iteration {interaction_count}')
-
-                # Sending a copy of the global net parameters to the child
-                parent.send(old_weights_bytes)
-
-                # Receiving the new weights coming from the child
-                new_weights_bytes = b''
-                while len(new_weights_bytes) < len_msg_bytes:
-                    new_weights_bytes += parent.recv(len_msg_bytes)
-                print(f'[PARENT] Received new weights at iteration {interaction_count}, length: {len(new_weights_bytes)}')
-
-                if new_weights_bytes == start_end_message:
-                    print(f'[PARENT] About to close the connection on the parent side')
-                    connected = False
-                    break
-
-                #Upload the new weights to the network
-                self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.01)
-
-                # Simple count of the number of interactions
-                interaction_count += 1
-
-
-                    # Updates the network parameters
+            # Interaction has been truncated, close connection
             print(f'[PARENT] Correctly closing parent')
             parent.close()

@@ -29,11 +29,11 @@ TO-DO
 """
 
 
-def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
+def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = ToyNet()
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
-                      cpu_id=i,
+                      cpu_id=cpu_id,
                       len_interaction=LEN_INPUTS_X + LEN_OUTPUTS_Y,
                       batch_size=BATCH_SIZE,  # If increased it's crap
                       num_iters=LEN_ITERATIONS,
@@ -63,7 +63,8 @@ def train_model(glob_net, opt, buffer, i, semaphor, res_queue):
                 # Calculates the loss between target and predict
                 loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
                 # Averages the loss if using batches, else only the single value
-                res_queue.put(loss.mean().item())
+                #if cpu_id == 0:
+                res_queue.put(loss.item())
                 # Zeroes the gradients out
                 opt.zero_grad()
                 # Performs calculation of the backward pass
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     buffer = ReplayBuffers.init_global_buffer(len_interaction=LEN_INPUTS_X + LEN_OUTPUTS_Y,  # 2 inputs + 1 output
                                               num_iters=LEN_ITERATIONS,
                                               tot_num_cpus=NUM_CPUS,
-                                              dtype=torch.float16)
+                                              dtype=torch.float32)
     # Creates a starting semaphor
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
