@@ -13,9 +13,9 @@ class Manager(object):
         return s
 
     @staticmethod
-    def initialize_queue(len_queue):
-        """Initializes a first-in first-out queue of batches updates of the shared network"""
-        return mp.Queue(len_queue)
+    def initialize_queue(len_queue=None):
+        """Initializes a queue object shared amongst cpu processes"""
+        return mp.Queue(len_queue) if len_queue is not None else mp.Queue()
 
     # NOTE: change the code below according to your needs
 

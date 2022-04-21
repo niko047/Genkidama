@@ -4,8 +4,10 @@ from MARL.Manager.manager import Manager
 import torch.functional as F
 import torch
 
+
 class SingleCore(mp.Process):
     """Class defining the behavior of each process running in each CPU core in the machine"""
+
     def __init__(self,
                  single_core_neural_net,
                  cores_orchestrator_neural_net,
@@ -17,10 +19,12 @@ class SingleCore(mp.Process):
                  len_interaction_Y,
                  batch_size,
                  num_iters,
-                 tot_num_cpus,
+                 tot_num_active_cpus,
                  replacement,
                  sample_from_shared_memory,
-                 res_queue
+                 res_queue,
+                 num_episodes,
+                 num_steps
                  ):
         super(SingleCore, self).__init__()
         self.single_core_neural_net = single_core_neural_net()
@@ -33,7 +37,7 @@ class SingleCore(mp.Process):
             len_interaction=len_interaction_X + len_interaction_Y,
             batch_size=batch_size,  # If increased it's crap
             num_iters=num_iters,
-            tot_num_cpus=tot_num_cpus,
+            tot_num_cpus=tot_num_active_cpus,
             replacement=replacement,
             sample_from_shared_memory=sample_from_shared_memory)
         self.cpu_id = cpu_id
@@ -41,25 +45,26 @@ class SingleCore(mp.Process):
         self.len_interaction_Y = len_interaction_Y
         self.batch_size = batch_size
         self.num_iters = num_iters
-        self.tot_num_cpus = tot_num_cpus
+        self.tot_num_active_cpus = tot_num_active_cpus
         self.replacement = replacement
         self.sample_from_shared_memory = sample_from_shared_memory
         self.res_queue = res_queue
-
+        self.num_episodes = num_episodes
+        self.num_steps = num_steps
 
     def run(self):
-        for i in range(self.NUM_EPISODES):
+        for i in range(self.num_episodes):
             # Generate training data and update buffer
-            for j in range(self.NUM_STEPS):
+            for j in range(self.num_steps):
                 # Generates some data according to the data generative mechanism
                 tensor_tuple = Manager.data_generative_mechanism()
                 # Records the interaction inside the shared Tensor buffer
                 self.b.record_interaction(tensor_tuple)
 
                 # Every once in a while
-                if (j + 1) % 2 == 0:  # todo 5 gradients step for eGSD
+                if (j + 1) % 2 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
-                    if not self.NUM_EPISODES:
+                    if not self.num_episodes:
                         # Do this only for the first absolute run
                         Manager.wait_for_green_light(semaphor=self.semaphor, cpu_id=self.cpu_id)
 
@@ -78,7 +83,8 @@ class SingleCore(mp.Process):
                     loss.backward()
 
                     # Perform the update of the global parameters using the local ones
-                    for lp, gp in zip(self.single_core_neural_net.parameters(), self.cores_orchestrator_neural_net.parameters()):
+                    for lp, gp in zip(self.single_core_neural_net.parameters(),
+                                      self.cores_orchestrator_neural_net.parameters()):
                         gp._grad = lp.grad
                     self.optimizer.step()
 
