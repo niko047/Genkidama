@@ -1,11 +1,11 @@
 import torch.multiprocessing as mp
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
-import torch.functional as F
+import torch.nn.functional as F
 import torch
 
 
-class SingleCore(mp.Process):
+class SingleCoreProcess(mp.Process):
     """Class defining the behavior of each process running in each CPU core in the machine"""
 
     def __init__(self,
@@ -26,7 +26,7 @@ class SingleCore(mp.Process):
                  num_episodes,
                  num_steps
                  ):
-        super(SingleCore, self).__init__()
+        super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net()
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
         self.semaphor = semaphor
@@ -92,3 +92,4 @@ class SingleCore(mp.Process):
                     print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.cpu_id} is: {loss}')
 
         self.res_queue.put(None)
+

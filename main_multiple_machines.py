@@ -2,6 +2,8 @@ from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
 from MARL.Optims.shared_optims import SharedAdam
 
+
+# TODO - Set up a different environment for these ones
 neural_net = ToyNet
 shared_optimizer = SharedAdam
 shared_opt_kwargs = {
@@ -18,8 +20,11 @@ cpu_capacity = .80  # 80%
 num_steps = 200
 num_episodes = 60
 
+# Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
+alpha = 1
+
 if __name__ == '__main__':
-    machine = CoresOrchestrator(neural_net=None,
+    machine = CoresOrchestrator(neural_net=neural_net,
                                 shared_optimizer=shared_optimizer,
                                 shared_optimizer_kwargs=shared_opt_kwargs,
                                 len_interaction_X=len_interaction_X,
@@ -31,4 +36,4 @@ if __name__ == '__main__':
                                 cpu_capacity=cpu_capacity,
                                 num_steps=num_steps,
                                 num_episodes=num_episodes)
-    machine.run()
+    machine.run_procs()

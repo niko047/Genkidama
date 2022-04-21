@@ -2,7 +2,7 @@ import torch.multiprocessing as mp
 import torch
 import math
 
-from .SingleCore import SingleCore
+from .SingleCore import SingleCoreProcess
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 
@@ -76,7 +76,7 @@ class CoresOrchestrator(object):
         res_queue = Manager.initialize_queue()
 
         # Define the processes
-        procs = [SingleCore(
+        procs = [SingleCoreProcess(
             single_core_neural_net=self.neural_net,
             cores_orchestrator_neural_net=self.orchestrator_neural_net,
             semaphor=semaphor,
@@ -98,5 +98,25 @@ class CoresOrchestrator(object):
 
         # Start the processes
         [p.start() for p in procs]
-        # Join the processes (terminate them)
+
+        res = []
+        while True:
+            r = res_queue.get()
+            if r is not None:
+                res.append(r)
+            else:
+                break
+
         [p.join() for p in procs]
+
+        # Code for plotting the rewards
+
+        import matplotlib.pyplot as plt
+
+        plt.plot(res)
+        plt.ylabel('Loss')
+        plt.xlabel('Step of the NN')
+        plt.show()
+
+        # Join the processes (terminate them)
+        print(f'Processes have finished running.')

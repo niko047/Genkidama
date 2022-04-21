@@ -41,3 +41,16 @@ class Manager(object):
         while not torch.all(semaphor):
             pass
 
+    @staticmethod
+    def weighted_avg_net_parameters(p1: torch.Tensor, p2: torch.Tensor, alpha: float):
+        """
+        Takes the Weighted average between two flattened tensors of parameters
+        :param p1: First flattened set of parameters
+        :param p2: Second flattened set of parameters
+        :param alpha: Relevance of the second vector of parameters with respect to the first one
+        :return: Weighted average between two flattened tensors of parameters
+        """
+        return (1 - alpha) * p1 + alpha * p2
+
+
+
