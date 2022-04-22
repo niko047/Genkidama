@@ -112,8 +112,16 @@ class CoresOrchestrator(object):
         # Code for plotting the rewards
 
         import matplotlib.pyplot as plt
+        import pandas as pd
+        n_steps = 30
 
-        plt.plot(res)
+        time_series_df = pd.DataFrame(res)
+        smooth_path = time_series_df.rolling(n_steps).mean()
+
+
+        # Plotting:
+        plt.plot(smooth_path, linewidth=2)  # mean curve.
+
         plt.ylabel('Loss')
         plt.xlabel('Step of the NN')
         plt.show()
