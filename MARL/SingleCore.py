@@ -26,7 +26,9 @@ class SingleCoreProcess(mp.Process):
                  sample_from_shared_memory,
                  res_queue,
                  num_episodes,
-                 num_steps
+                 num_steps,
+                 socket_connection,
+                 address
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net()
@@ -53,6 +55,9 @@ class SingleCoreProcess(mp.Process):
         self.res_queue = res_queue
         self.num_episodes = num_episodes
         self.num_steps = num_steps
+
+        self.socket_connection = socket_connection
+        self.address = address
 
         #TODO - Change
         self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
@@ -96,7 +101,6 @@ class SingleCoreProcess(mp.Process):
                     self.local_optimizer.step()
 
                     if (j+1) % 20 == 0:
-                        # TODO - Perform a weighted average of the network weights
 
                         # Get the current flat weights of the local net and global one
                         flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
@@ -112,16 +116,6 @@ class SingleCoreProcess(mp.Process):
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                    # Change the following if you want it to accumulate gradients and then perform updates based on those
-                    # accumulating_gradients = False
-                    # if accumulating_gradients:
-                    #
-                    #     # Perform the update of the global parameters using the local ones
-                    #     for lp, gp in zip(self.single_core_neural_net.parameters(),
-                    #                       self.cores_orchestrator_neural_net.parameters()):
-                    #         gp._grad = lp.grad
-                    #     self.optimizer.step()
-                    # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
                     print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.cpu_id} is: {loss}')
 

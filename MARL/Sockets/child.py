@@ -18,16 +18,33 @@ class Client(GeneralSocket):
     def get_message(self):
         return 'Hello server, im the client!'
 
-    def start_worker(self):
+    def start_worker(self, cores_orchestrator):
         with self.worker as worker:
             worker.listen()
             print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
             while True:
                 conn, addr = worker.accept()
-                thread = threading.Thread(target=self.worker_interact, args=(conn, addr))
-                thread.start()
+                cores_orchestrator.run_procs(conn, addr)
 
-    def worker_interact(self, conn_to_parent, addr_of_parent):
+
+    # TODO - Insert a shitload of static methods to handle the receiving and sending of information
+    # TODO - The methods will be called all inside the single core process
+    # TODO - BASICALLY REPORT THE FUNCTION BELOW IN A SET OF DISJOINT STATIC METHODS THAT CAN BE USED INDIVIDUALLY
+    @staticmethod
+    def handshake(neural_net, ):
+        return
+
+    @staticmethod
+    def wait_receive_update():
+        return
+
+    @staticmethod
+    def prepare_send():
+        return
+
+
+
+    def child_interact(self, conn_to_parent, addr_of_parent):
         connected, handshake = True, False
         old_weights_bytes = self.neural_net.encode_parameters()
         # print(f'Old weights are {old_weights_bytes}')
@@ -59,7 +76,6 @@ class Client(GeneralSocket):
             self.neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
             # Does some calculations, change this fake like to interaction between the agent and the environment
-            # TODO
 
             # Encodes the new parameters that have changed after the calculations
             new_weights_bytes = self.neural_net.encode_parameters()

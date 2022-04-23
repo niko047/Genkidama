@@ -2,17 +2,16 @@ import torch.multiprocessing as mp
 import torch
 import math
 
-from .SingleCore import SingleCoreProcess
+from MARL.SingleCore import SingleCoreProcess
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Sockets.child import Client
 from MARL.Nets.neural_net import ToyNet
 
-
 # TODO - Allow for the possibility of connection to a shared database in the future
 # TODO - Get the parameters from an input json somewhere
 
-class CoresOrchestrator(object):
+class SocketNeuralNetwork(object):
 
     def __init__(self,
                  neural_net,
@@ -69,13 +68,19 @@ class CoresOrchestrator(object):
         self.num_steps = num_steps
         self.num_episodes = num_episodes
 
-    def run_procs(self, conn, addr):
+
+    def run_procs(self):
+
+        # TODO - Create the socket connection here
 
         # Define a semaphor here
         semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
+
+        # TODO - Pass the socket connection in here, in a modularized way
+
 
         # Define the processes
         procs = [SingleCoreProcess(
@@ -94,9 +99,7 @@ class CoresOrchestrator(object):
             sample_from_shared_memory=self.sample_from_shared_memory,
             res_queue=res_queue,
             num_episodes=self.num_episodes,
-            num_steps=self.num_steps,
-            socket_connection=conn,
-            address=addr
+            num_steps=self.num_steps
         ) for cpu_id in
             range(self.n_available_cores)]
 
@@ -114,20 +117,21 @@ class CoresOrchestrator(object):
         [p.join() for p in procs]
 
         # Code for plotting the rewards
-        #
-        # import matplotlib.pyplot as plt
-        # import pandas as pd
-        # n_steps = 30
-        #
-        # time_series_df = pd.DataFrame(res)
-        # smooth_path = time_series_df.rolling(n_steps).mean()
-        #
-        # # Plotting:
-        # plt.plot(smooth_path, linewidth=2)  # mean curve.
-        #
-        # plt.ylabel('Loss')
-        # plt.xlabel('Step of the NN')
-        # plt.show()
+
+        import matplotlib.pyplot as plt
+        import pandas as pd
+        n_steps = 30
+
+        time_series_df = pd.DataFrame(res)
+        smooth_path = time_series_df.rolling(n_steps).mean()
+
+
+        # Plotting:
+        plt.plot(smooth_path, linewidth=2)  # mean curve.
+
+        plt.ylabel('Loss')
+        plt.xlabel('Step of the NN')
+        plt.show()
 
         # Join the processes (terminate them)
         print(f'Processes have finished running.')
