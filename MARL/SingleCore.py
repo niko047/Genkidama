@@ -81,14 +81,19 @@ class SingleCoreProcess(mp.Process):
             )
 
             # Wait for weights to be received
+            print(f"Receiving bytes from parent")
             recv_weights_bytes = b''
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
+            print(f"Implementing the parameters received to the local core net")
 
             self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
+
         for i in range(self.num_episodes):
             # Generate training data and update buffer
+            print(f"Started the loop, working at the first episode")
+
             for j in range(self.num_steps):
                 # Generates some data according to the data generative mechanism
                 tensor_tuple = Manager.data_generative_mechanism()

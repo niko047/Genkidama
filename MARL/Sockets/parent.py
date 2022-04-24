@@ -72,10 +72,14 @@ class Parent(GeneralSocket):
             # Sending a copy of the global net parameters to the child
             parent.send(old_weights_bytes)
 
+            print(f"Weights sent, now waiting to receive the others")
+
 
             # Receiving the new weights coming from the child
             new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,
                                                                 gsocket=parent)
+
+            print(f"Received weights, about to implement them")
 
             # If the message received from the child is the one signaling the end, then close the connection
             if new_weights_bytes == start_end_msg:
@@ -83,6 +87,8 @@ class Parent(GeneralSocket):
 
             # Upload the new weights to the network
             self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.01)
+
+            print("Implemented, going forward")
 
             # Simple count of the number of interactions
             interaction_count += 1
