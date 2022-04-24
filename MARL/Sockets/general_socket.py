@@ -1,9 +1,9 @@
 class GeneralSocket(object):
 
-    def __init__(self, address, port, neural_net):
+    def __init__(self, address, port, cores_orchestrator):
         self.address = address
         self.port = port
-        self.neural_net = neural_net()
+        self.cores_orchestrator = cores_orchestrator()
 
     @staticmethod
     def wait_msg_received(len_true_msg, gsocket):

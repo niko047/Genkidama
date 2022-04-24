@@ -5,8 +5,11 @@ from .general_socket import GeneralSocket
 
 class Client(GeneralSocket):
 
-    def __init__(self, address, port, child_net):
-        super().__init__(address=address, port=port, neural_net=child_net)
+    def __init__(self, address, port, network_blueprint):
+
+        # Inside here the blueprint is made into an object
+        super().__init__(address=address, port=port, cores_orchestrator=network_blueprint)
+
 
         # Initializes the client socket
         self.worker_init()
@@ -18,13 +21,13 @@ class Client(GeneralSocket):
     def get_message(self):
         return 'Hello server, im the client!'
 
-    def start_worker(self, cores_orchestrator):
+    def start_worker(self):
         with self.worker as worker:
             worker.listen()
             print(f'[LISTENING] Server is listening on {self.address}:{self.port}')
             while True:
                 conn, addr = worker.accept()
-                cores_orchestrator.run_procs(conn, addr)
+                self.cores_orchestrator.run_procs(conn, addr)
 
 
     # TODO - Insert a shitload of static methods to handle the receiving and sending of information

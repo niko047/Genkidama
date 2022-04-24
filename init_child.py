@@ -23,7 +23,7 @@ ADDRESS = args.ipaddress
 
 
 def start_child():
-    c = Client(address=ADDRESS, port=PORT, child_net=ToyNet)
+    c = Client(address=ADDRESS, port=PORT, network_blueprint=ToyNet)
     c.start_worker()
 
 
