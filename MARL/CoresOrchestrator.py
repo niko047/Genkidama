@@ -74,6 +74,7 @@ class CoresOrchestrator(object):
         # Define a semaphor here
         starting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
         cores_waiting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
+        ending_semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
@@ -84,6 +85,7 @@ class CoresOrchestrator(object):
             cores_orchestrator_neural_net=self.orchestrator_neural_net,
             starting_semaphor=starting_semaphor,
             cores_waiting_semaphor=cores_waiting_semaphor,
+            ending_semaphor=ending_semaphor,
             optimizer=self.shared_optimizer,
             buffer=self.replay_buffer,
             cpu_id=cpu_id,
@@ -104,7 +106,6 @@ class CoresOrchestrator(object):
 
         # Start the processes
         [p.start() for p in procs]
-
         res = []
         while True:
             r = res_queue.get()
@@ -112,8 +113,8 @@ class CoresOrchestrator(object):
                 res.append(r)
             else:
                 break
-
         [p.join() for p in procs]
+
 
         # Code for plotting the rewards
         #

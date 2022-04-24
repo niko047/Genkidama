@@ -16,6 +16,7 @@ class SingleCoreProcess(mp.Process):
                  cores_orchestrator_neural_net,
                  starting_semaphor,
                  cores_waiting_semaphor,
+                 ending_semaphor,
                  optimizer,
                  buffer,
                  cpu_id,
@@ -37,6 +38,7 @@ class SingleCoreProcess(mp.Process):
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
+        self.ending_semaphor = ending_semaphor
         self.optimizer = optimizer
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
@@ -92,7 +94,6 @@ class SingleCoreProcess(mp.Process):
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
-            print(f"Started the loop, working at the first episode")
 
             for j in range(self.num_steps):
                 # Generates some data according to the data generative mechanism
@@ -106,6 +107,7 @@ class SingleCoreProcess(mp.Process):
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                     if not self.num_episodes:
                         # Do this only for the first absolute run
+                        print(f'Waiting for starting green light')
                         Manager.wait_for_green_light(semaphor=self.starting_semaphor, cpu_id=self.cpu_id)
 
                     # Random samples a batch
@@ -148,13 +150,21 @@ class SingleCoreProcess(mp.Process):
 
 
 
-                    print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.cpu_id} is: {loss}')
+                    print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
-            print(f'[CORE {self.cpu_id}] Waiting at the semaphor')
+
             # Wait for the green light to avoid overwriting
-            Manager.wait_for_green_light(self.cores_waiting_semaphor, self.cpu_id)
+            print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
+
+            # TODO - If it's the deisgnated core, then wait and check that all the others are true
+            # TODO - Also when done assign false to everybody
 
             if self.is_designated_core:
+                while not torch.all(torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
+                    pass
+
+                # TODO - They're sleeping now, perform updates
+
                 # Send the old data to the global network
                 Client.prepare_send(
                     conn_to_parent=self.socket_connection,
@@ -167,11 +177,18 @@ class SingleCoreProcess(mp.Process):
                     len_msg_bytes=len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
 
-                # Turn off all semaphors
-                Manager.turn_off_semaphor_lights(self.cores_waiting_semaphor)
+                # TODO - Set them free to read the news and update themselves
+                self.cores_waiting_semaphor[1:] = False
+
+            # TODO - If not the designated core, sign yourself as true, and wait till you're false
+            else:
+                self.cores_waiting_semaphor[self.cpu_id] = True
+                while self.cores_waiting_semaphor[self.cpu_id]:
+                    pass
 
             # Pull parameters from orchestrator to each single node
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
+        self.ending_semaphor[self.cpu_id] = True
         self.res_queue.put(None)
 
