@@ -16,8 +16,11 @@ from .general_socket import GeneralSocket
 
 class Parent(GeneralSocket):
 
-    def __init__(self, child_address, port, parent_net):
-        super().__init__(address=child_address, port=port, neural_net=parent_net)
+    def __init__(self, child_address, port, network_blueprint):
+        super().__init__(address=child_address, port=port)
+
+        self.neural_net = network_blueprint()
+
         # Initialize the socket obj
         self.parent_init()
 

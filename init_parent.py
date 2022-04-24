@@ -23,7 +23,7 @@ ADDRESS = args.ipaddress
 
 
 def start_parent():
-    s = Parent(child_address=ADDRESS, port=PORT, parent_net=ToyNet)
+    s = Parent(child_address=ADDRESS, port=PORT, network_blueprint=ToyNet)
     s.handle_worker()
 
 if __name__ == '__main__':

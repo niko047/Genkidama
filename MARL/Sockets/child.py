@@ -8,7 +8,8 @@ class Client(GeneralSocket):
     def __init__(self, address, port, network_blueprint):
 
         # Inside here the blueprint is made into an object
-        super().__init__(address=address, port=port, cores_orchestrator=network_blueprint)
+        super().__init__(address=address, port=port)
+        self.cores_orchestrator = network_blueprint()
 
 
         # Initializes the client socket
@@ -80,7 +81,7 @@ class Client(GeneralSocket):
 
 
 
-
+'''
     def child_interact(self, conn_to_parent, addr_of_parent):
         connected, handshake = True, False
         old_weights_bytes = self.neural_net.encode_parameters()
@@ -124,3 +125,4 @@ class Client(GeneralSocket):
                 break
         # Close the connection and detach parent from child
         conn_to_parent.close()
+'''

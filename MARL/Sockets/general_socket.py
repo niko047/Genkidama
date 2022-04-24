@@ -1,9 +1,8 @@
 class GeneralSocket(object):
 
-    def __init__(self, address, port, cores_orchestrator):
+    def __init__(self, address, port):
         self.address = address
         self.port = port
-        self.cores_orchestrator = cores_orchestrator()
 
     @staticmethod
     def wait_msg_received(len_true_msg, gsocket):
