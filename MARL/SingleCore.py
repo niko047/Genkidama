@@ -1,6 +1,7 @@
 import torch.multiprocessing as mp
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
+from MARL.Sockets.child import Client
 import torch.nn.functional as F
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
@@ -13,7 +14,8 @@ class SingleCoreProcess(mp.Process):
     def __init__(self,
                  single_core_neural_net,
                  cores_orchestrator_neural_net,
-                 semaphor,
+                 starting_semaphor,
+                 cores_waiting_semaphor,
                  optimizer,
                  buffer,
                  cpu_id,
@@ -33,7 +35,8 @@ class SingleCoreProcess(mp.Process):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net()
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
-        self.semaphor = semaphor
+        self.starting_semaphor = starting_semaphor
+        self.cores_waiting_semaphor = cores_waiting_semaphor
         self.optimizer = optimizer
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
@@ -58,11 +61,32 @@ class SingleCoreProcess(mp.Process):
 
         self.socket_connection = socket_connection
         self.address = address
+        self.is_designated_core = True if not self.cpu_id else False
 
         #TODO - Change
         self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
 
     def run(self):
+        # TODO - Initialize the connection here to the designated cpu
+        if self.is_designated_core:
+            old_weights_bytes = self.neural_net.encode_parameters()
+            len_msg_bytes = len(old_weights_bytes)
+            print(f'Length of weights is {len_msg_bytes}')
+            start_end_msg = b' ' * len_msg_bytes
+            Client.handshake(
+                conn_to_parent=self.socket_connection,
+                has_handshaked=False,
+                len_msg_bytes=len_msg_bytes,
+                start_end_msg=start_end_msg
+            )
+
+            # Wait for weights to be received
+            recv_weights_bytes = b''
+            while len(recv_weights_bytes) < len_msg_bytes:
+                recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
+
+            self.neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+
         for i in range(self.num_episodes):
             # Generate training data and update buffer
             for j in range(self.num_steps):
@@ -77,7 +101,7 @@ class SingleCoreProcess(mp.Process):
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                     if not self.num_episodes:
                         # Do this only for the first absolute run
-                        Manager.wait_for_green_light(semaphor=self.semaphor, cpu_id=self.cpu_id)
+                        Manager.wait_for_green_light(semaphor=self.starting_semaphor, cpu_id=self.cpu_id)
 
                     # Random samples a batch
                     sampled_batch = self.b.random_sample_batch()
@@ -117,7 +141,32 @@ class SingleCoreProcess(mp.Process):
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
 
+
+
                     print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.cpu_id} is: {loss}')
+
+            print(f'[CORE {self.cpu_id}] Waiting at the semaphor')
+            # Wait for the green light to avoid overwriting
+            Manager.wait_for_green_light(self.cores_waiting_semaphor, self.cpu_id)
+
+            if self.is_designated_core:
+                # Send the old data to the global network
+                Client.prepare_send(
+                    conn_to_parent=self.socket_connection,
+                    neural_net=self.cores_orchestrator_neural_net
+                )
+
+                # Wait for response and update current
+                Client.wait_receive_update(
+                    conn_to_parent=self.socket_connection,
+                    len_msg_bytes=len_msg_bytes,
+                    neural_net=self.cores_orchestrator_neural_net)
+
+                # Turn off all semaphors
+                Manager.turn_off_semaphor_lights(self.cores_waiting_semaphor)
+
+            # Pull parameters from orchestrator to each single node
+            self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         self.res_queue.put(None)
 

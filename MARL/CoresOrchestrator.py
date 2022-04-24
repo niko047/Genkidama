@@ -72,7 +72,8 @@ class CoresOrchestrator(object):
     def run_procs(self, conn, addr):
 
         # Define a semaphor here
-        semaphor = Manager.initialize_semaphor(self.n_available_cores)
+        starting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
+        cores_waiting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
@@ -81,7 +82,8 @@ class CoresOrchestrator(object):
         procs = [SingleCoreProcess(
             single_core_neural_net=self.neural_net,
             cores_orchestrator_neural_net=self.orchestrator_neural_net,
-            semaphor=semaphor,
+            starting_semaphor=starting_semaphor,
+            cores_waiting_semaphor=cores_waiting_semaphor,
             optimizer=self.shared_optimizer,
             buffer=self.replay_buffer,
             cpu_id=cpu_id,

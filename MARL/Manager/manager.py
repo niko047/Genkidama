@@ -42,6 +42,11 @@ class Manager(object):
             pass
 
     @staticmethod
+    def turn_off_semaphor_lights(semaphor: mp.Array):
+        semaphor[:] = False
+
+
+    @staticmethod
     def weighted_avg_net_parameters(p1: torch.Tensor, p2: torch.Tensor, alpha: float):
         """
         Takes the Weighted average between two flattened tensors of parameters

@@ -25,6 +25,8 @@ num_episodes = 100
 alpha = 1
 
 if __name__ == '__main__':
+
+
     machine = CoresOrchestrator(neural_net=neural_net,
                                 shared_optimizer=shared_optimizer,
                                 shared_optimizer_kwargs=shared_opt_kwargs,

@@ -30,17 +30,51 @@ class Client(GeneralSocket):
     # TODO - Insert a shitload of static methods to handle the receiving and sending of information
     # TODO - The methods will be called all inside the single core process
     # TODO - BASICALLY REPORT THE FUNCTION BELOW IN A SET OF DISJOINT STATIC METHODS THAT CAN BE USED INDIVIDUALLY
-    @staticmethod
-    def handshake(neural_net, ):
-        return
+
 
     @staticmethod
-    def wait_receive_update():
-        return
+    def handshake(conn_to_parent, has_handshaked, len_msg_bytes, start_end_msg):
+        while not has_handshaked:
+            # Waits for some parent to send a handshake
+            start_msg_bytes = b''
+            while len(start_msg_bytes) < len_msg_bytes:
+                start_msg_bytes += conn_to_parent.recv(len_msg_bytes)
+            # If the handshake is accepted
+            if start_msg_bytes == start_end_msg:
+                # Makes contact and sends confirmation
+                conn_to_parent.send(start_end_msg)
+                print(f'[CHILD] Handshake done')
+                return True
+            else:
+                print(f'[CHILD] Error during hansdhake')
+                return False
 
     @staticmethod
-    def prepare_send():
-        return
+    def wait_receive_update(conn_to_parent, len_msg_bytes, neural_net):
+        # Wait for weights to be received
+        recv_weights_bytes = b''
+        while len(recv_weights_bytes) < len_msg_bytes:
+            recv_weights_bytes += conn_to_parent.recv(len_msg_bytes)
+
+        # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
+        neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+
+    @staticmethod
+    def prepare_send(conn_to_parent, neural_net):
+        # Encodes the new parameters that have changed after the calculations
+        new_weights_bytes = neural_net.encode_parameters()
+        # Sends the new weights over the network to the parent
+        print(f'[CHILD] Sending data over')
+        conn_to_parent.send(new_weights_bytes)
+
+    @staticmethod
+    def close_connection(conn_to_parent, start_end_msg):
+        conn_to_parent.send(start_end_msg)
+
+
+
+
+
 
 
 
@@ -53,19 +87,13 @@ class Client(GeneralSocket):
         start_end_msg = b' ' * len_msg_bytes
         num_interactions = 1
         while connected:
-            while not handshake:
-                # Waits for some parent to send a handshake
-                start_msg_bytes = b''
-                while len(start_msg_bytes) < len_msg_bytes:
-                    start_msg_bytes += conn_to_parent.recv(len_msg_bytes)
-                # If the handshake is accepted
-                if start_msg_bytes == start_end_msg:
-                    # Makes contact and sends confirmation
-                    conn_to_parent.send(start_end_msg)
-                    handshake = True
-                    print(f'[CHILD] Handshake done')
-                else:
-                    print(f'[CHILD] Error during hansdhake')
+            if not handshake:
+                handshake = Client.handshake(
+                    conn_to_parent=conn_to_parent,
+                    has_handshaked=handshake,
+                    len_msg_bytes=len_msg_bytes,
+                    start_end_msg=start_end_msg
+                )
 
             # Wait for weights to be received
             recv_weights_bytes = b''
