@@ -5,12 +5,11 @@ from .general_socket import GeneralSocket
 
 class Client(GeneralSocket):
 
-    def __init__(self, address, port, network_blueprint):
+    def __init__(self, address, port, cores_orchestrator):
 
         # Inside here the blueprint is made into an object
         super().__init__(address=address, port=port)
-        self.cores_orchestrator = network_blueprint()
-
+        self.cores_orchestrator = cores_orchestrator
 
         # Initializes the client socket
         self.worker_init()
