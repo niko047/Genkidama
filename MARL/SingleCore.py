@@ -69,7 +69,7 @@ class SingleCoreProcess(mp.Process):
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
         if self.is_designated_core:
-            old_weights_bytes = self.neural_net.encode_parameters()
+            old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
             print(f'Length of weights is {len_msg_bytes}')
             start_end_msg = b' ' * len_msg_bytes
@@ -85,7 +85,7 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
-            self.neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+            self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
