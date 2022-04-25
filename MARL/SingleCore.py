@@ -112,7 +112,7 @@ class SingleCoreProcess(mp.Process):
                 # Every once in a while, define better this condition
                 if (j + 1) % 3 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
-                    print(f'INSIDE THE 3 DIVISIBLE THING')
+                    print(f'INSIDE THE 3 DIVISIBLE THING, num episodes is {self.num_episodes}')
                     if not self.num_episodes:
                         # Do this only for the first absolute run
                         print(f'Waiting for starting green light')
