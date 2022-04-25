@@ -113,7 +113,9 @@ class SingleCoreProcess(mp.Process):
                     if not self.num_episodes:
                         # Do this only for the first absolute run
                         print(f'Waiting for starting green light')
-                        Manager.wait_for_green_light(semaphor=self.starting_semaphor, cpu_id=self.cpu_id)
+                        self.starting_semaphor[self.cpu_id] = True
+                        while not torch.all(self.starting_semaphor):
+                            pass
 
                     # Random samples a batch
                     sampled_batch = self.b.random_sample_batch()

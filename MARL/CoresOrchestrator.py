@@ -106,13 +106,13 @@ class CoresOrchestrator(object):
 
         # Start the processes
         [p.start() for p in procs]
-        res = []
-        while True:
-            r = res_queue.get()
-            if r is not None:
-                res.append(r)
-            else:
-                break
+        # res = []
+        # while True:
+        #     r = res_queue.get()
+        #     if r is not None:
+        #         res.append(r)
+        #     else:
+        #         break
         [p.join() for p in procs]
 
 
