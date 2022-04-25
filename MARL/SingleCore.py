@@ -70,6 +70,7 @@ class SingleCoreProcess(mp.Process):
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
+        print(f'[CORE {self.cpu_id}] About to run')
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
@@ -87,10 +88,12 @@ class SingleCoreProcess(mp.Process):
             recv_weights_bytes = b''
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
+
             print(f"Implementing the parameters received to the local core net")
 
             self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
+        print(f'[CORE {self.cpu_id}] About to enter loop')
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
