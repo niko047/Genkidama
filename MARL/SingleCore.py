@@ -70,6 +70,8 @@ class SingleCoreProcess(mp.Process):
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
+        import os
+        print(f'[CORE {self.cpu_id}] Current PID is {os.getppid()}')
         print(f'[CORE {self.cpu_id}] About to run')
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()

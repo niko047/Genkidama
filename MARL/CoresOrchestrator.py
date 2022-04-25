@@ -105,6 +105,8 @@ class CoresOrchestrator(object):
             range(self.n_available_cores)]
 
         # Start the processes
+        import os
+        print(f"Current PID is {os.getppid()}")
         [p.start() for p in procs]
         # res = []
         # while True:
