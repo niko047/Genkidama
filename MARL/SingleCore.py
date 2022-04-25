@@ -95,27 +95,20 @@ class SingleCoreProcess(mp.Process):
 
             self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
-        print(f'[CORE {self.cpu_id}] About to enter loop')
-
         for i in range(self.num_episodes):
             # Generate training data and update buffer
-            print(f'[CORE {self.cpu_id}] Inside the loop')
             for j in range(self.num_steps):
                 # Generates some data according to the data generative mechanism
-                print(f'[CORE {self.cpu_id}] Generating data')
                 tensor_tuple = Manager.data_generative_mechanism()
 
                 # Records the interaction inside the shared Tensor buffer
-                print(f'[CORE {self.cpu_id}] Storing data')
                 self.b.record_interaction(tensor_tuple)
 
                 # Every once in a while, define better this condition
                 if (j + 1) % 3 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
-                    print(f'INSIDE THE 3 DIVISIBLE THING, num episodes is {self.num_episodes}')
-                    if not self.num_episodes:
+                    if not i:
                         # Do this only for the first absolute run
-                        print(f'Waiting for starting green light')
                         self.starting_semaphor[self.cpu_id] = True
                         while not torch.all(self.starting_semaphor):
                             pass
