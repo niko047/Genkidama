@@ -107,10 +107,12 @@ class SingleCoreProcess(mp.Process):
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                     if i == 0:
                         # Do this only for the first absolute run
-                        print(f'[CORE {self.cpu_id}] Is at the semaphor {self.starting_semaphor}')
                         self.starting_semaphor[self.cpu_id] = True
+                        print(f'[CORE {self.cpu_id}] Is at the semaphor {self.starting_semaphor}')
                         while not torch.all(self.starting_semaphor):
                             pass
+
+                    print(f'[CORE {self.cpu_id}] Computations have started')
 
                     # Random samples a batch
                     sampled_batch = self.b.random_sample_batch()
