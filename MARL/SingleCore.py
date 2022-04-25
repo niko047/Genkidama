@@ -71,8 +71,6 @@ class SingleCoreProcess(mp.Process):
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
         import os
-        print(f'[CORE {self.cpu_id}] Current PID is {os.getppid()}')
-        print(f'[CORE {self.cpu_id}] About to run')
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
@@ -107,8 +105,9 @@ class SingleCoreProcess(mp.Process):
                 # Every once in a while, define better this condition
                 if (j + 1) % 3 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
-                    if not i:
+                    if i == 0:
                         # Do this only for the first absolute run
+                        print(f'[CORE {self.cpu_id}] Is at the semaphor {self.starting_semaphor}')
                         self.starting_semaphor[self.cpu_id] = True
                         while not torch.all(self.starting_semaphor):
                             pass
