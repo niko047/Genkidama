@@ -116,15 +116,20 @@ class SingleCoreProcess(mp.Process):
 
                     # Random samples a batch
                     sampled_batch = self.b.random_sample_batch()
+                    print(f'[CORE {self.cpu_id}] Random sampled batch')
 
                     # Forward pass of the neural net, until the output columns, in this case last one
                     loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
+                    print(f'[CORE {self.cpu_id}] Forward neural net')
 
                     # Calculates the loss between target and predict
                     loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
+                    print(f'[CORE {self.cpu_id}] Mse loss computed')
 
                     # Averages the loss if using batches, else only the single value
+                    print(f'[CORE {self.cpu_id}] Before putting item in resqueue')
                     self.res_queue.put(loss.item())
+                    print(f'[CORE {self.cpu_id}] Put item in resqueue')
 
                     # Zeroes the gradients out
                     self.optimizer.zero_grad()
