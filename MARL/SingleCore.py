@@ -110,41 +110,29 @@ class SingleCoreProcess(mp.Process):
                     if i == 0:
                         # Do this only for the first absolute run
                         self.starting_semaphor[self.cpu_id] = True
-                        print(f'[CORE {self.cpu_id}] Is at the semaphor {self.starting_semaphor}')
                         while not torch.all(self.starting_semaphor):
                             pass
 
-                    print(f'[CORE {self.cpu_id}] Computations have started')
-
                     # Random samples a batch
                     sampled_batch = self.b.random_sample_batch()
-                    print(f'[CORE {self.cpu_id}] Random sampled batch')
 
                     # Forward pass of the neural net, until the output columns, in this case last one
                     loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
-                    print(f'[CORE {self.cpu_id}] Forward neural net')
 
                     # Calculates the loss between target and predict
                     loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
-                    print(f'[CORE {self.cpu_id}] Mse loss computed')
 
                     # Averages the loss if using batches, else only the single value
-                    print(f'[CORE {self.cpu_id}] Before putting item in resqueue')
                     self.res_queue.put(loss.item())
-                    print(f'[CORE {self.cpu_id}] Put item in resqueue')
 
                     # Zeroes the gradients out
                     self.optimizer.zero_grad()
-                    print(f'[CORE {self.cpu_id}] Zero grad optimized')
 
                     # Performs calculation of the gradients
                     loss.backward()
-                    print(f'[CORE {self.cpu_id}] Loss backward done')
 
-                    # TODO - Code in raspberry pi stops here, does not perform the optimizer step
                     # Performs backpropagation with the gradients computed
                     self.local_optimizer.step()
-                    print(f'[CORE {self.cpu_id}] Local optimizer step is done')
 
                     if (j + 1) % 20 == 0:
                         # Get the current flat weights of the local net and global one
@@ -154,7 +142,7 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=0.25)  # TODO - Change it to a param
+                                                                              alpha=0.1)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
@@ -166,14 +154,10 @@ class SingleCoreProcess(mp.Process):
             # Wait for the green light to avoid overwriting
             print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
 
-            # TODO - If it's the deisgnated core, then wait and check that all the others are true
-            # TODO - Also when done assign false to everybody
-
+            # They're sleeping now, perform updates
             if self.is_designated_core:
                 while not torch.all(torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
-
-                # TODO - They're sleeping now, perform updates
 
                 # Send the old data to the global network
                 Client.prepare_send(
@@ -187,10 +171,10 @@ class SingleCoreProcess(mp.Process):
                     len_msg_bytes=len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
 
-                # TODO - Set them free to read the news and update themselves
+                # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
 
-            # TODO - If not the designated core, sign yourself as true, and wait till you're false
+            # Sleeping pill for all cores except the designated one
             else:
                 self.cores_waiting_semaphor[self.cpu_id] = True
                 while self.cores_waiting_semaphor[self.cpu_id]:
@@ -199,7 +183,12 @@ class SingleCoreProcess(mp.Process):
             # Pull parameters from orchestrator to each single node
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
+        # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
+
+        # The designated core can then close the connection with the parent
         if self.is_designated_core:
             Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
+
+        # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
