@@ -97,12 +97,14 @@ class SingleCoreProcess(mp.Process):
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
-
+            print(f'[CORE {self.cpu_id}] Inside the loop')
             for j in range(self.num_steps):
                 # Generates some data according to the data generative mechanism
+                print(f'[CORE {self.cpu_id}] Generating data')
                 tensor_tuple = Manager.data_generative_mechanism()
 
                 # Records the interaction inside the shared Tensor buffer
+                print(f'[CORE {self.cpu_id}] Storing data')
                 self.b.record_interaction(tensor_tuple)
 
                 # Every once in a while, define better this condition
