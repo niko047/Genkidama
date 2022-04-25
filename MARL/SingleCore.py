@@ -6,7 +6,8 @@ import torch.nn.functional as F
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import torch.nn as nn
-from torch.optim import Adam
+from torch.optim import Adam, SGD
+
 
 class SingleCoreProcess(mp.Process):
     """Class defining the behavior of each process running in each CPU core in the machine"""
@@ -65,8 +66,9 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
-        #TODO - Change
-        self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
+        # TODO - Change
+        # self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
+        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.01, momentum=0.9)
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
@@ -131,7 +133,6 @@ class SingleCoreProcess(mp.Process):
                     self.res_queue.put(loss.item())
                     print(f'[CORE {self.cpu_id}] Put item in resqueue')
 
-                    # TODO - Something is not working around here, check it better
                     # Zeroes the gradients out
                     self.optimizer.zero_grad()
                     print(f'[CORE {self.cpu_id}] Zero grad optimized')
@@ -140,12 +141,12 @@ class SingleCoreProcess(mp.Process):
                     loss.backward()
                     print(f'[CORE {self.cpu_id}] Loss backward done')
 
+                    # TODO - Code in raspberry pi stops here, does not perform the optimizer step
                     # Performs backpropagation with the gradients computed
                     self.local_optimizer.step()
                     print(f'[CORE {self.cpu_id}] Local optimizer step is done')
 
-                    if (j+1) % 20 == 0:
-
+                    if (j + 1) % 20 == 0:
                         # Get the current flat weights of the local net and global one
                         flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
                         flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
@@ -153,7 +154,7 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=0.25)#TODO - Change it to a param
+                                                                              alpha=0.25)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
@@ -161,7 +162,6 @@ class SingleCoreProcess(mp.Process):
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
                     print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
-
 
             # Wait for the green light to avoid overwriting
             print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
@@ -201,6 +201,5 @@ class SingleCoreProcess(mp.Process):
 
         self.ending_semaphor[self.cpu_id] = True
         if self.is_designated_core:
-            Client.close_connection(conn_to_parent=self.socket_connection,start_end_msg=start_end_msg)
+            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
         self.res_queue.put(None)
-
