@@ -131,14 +131,18 @@ class SingleCoreProcess(mp.Process):
                     self.res_queue.put(loss.item())
                     print(f'[CORE {self.cpu_id}] Put item in resqueue')
 
+                    # TODO - Something is not working around here, check it better
                     # Zeroes the gradients out
                     self.optimizer.zero_grad()
+                    print(f'[CORE {self.cpu_id}] Zero grad optimized')
 
                     # Performs calculation of the gradients
                     loss.backward()
+                    print(f'[CORE {self.cpu_id}] Loss backward done')
 
                     # Performs backpropagation with the gradients computed
                     self.local_optimizer.step()
+                    print(f'[CORE {self.cpu_id}] Local optimizer step is done')
 
                     if (j+1) % 20 == 0:
 
@@ -155,9 +159,6 @@ class SingleCoreProcess(mp.Process):
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-
-
-
 
                     print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
@@ -199,5 +200,7 @@ class SingleCoreProcess(mp.Process):
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         self.ending_semaphor[self.cpu_id] = True
+        if self.is_designated_core:
+            Client.close_connection(conn_to_parent=self.socket_connection,start_end_msg=start_end_msg)
         self.res_queue.put(None)
 
