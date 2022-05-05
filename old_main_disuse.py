@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Optims.shared_optims import SharedAdam
+from torch.optim import SGD
 from MARL.Nets.neural_net import ToyNet
 
 mp.set_start_method('spawn', force=True)
