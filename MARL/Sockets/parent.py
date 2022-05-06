@@ -22,12 +22,11 @@ class Parent(GeneralSocket):
 
         self.neural_net = network_blueprint()
 
-        # Initialize the socket obj
-        self.parent_init()
 
-    def parent_init(self):
+
+    def parent_init(self, address, port):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.parent.connect((self.address, self.port))
+        self.parent.connect((address, port))
 
     def get_start_end_msg(self):
         encoded_params = self.neural_net.encode_parameters()
@@ -109,5 +108,6 @@ class Parent(GeneralSocket):
 
     def handle_worker_multithreading(self):
         for ip_addr in self.addresses:
+            self.parent_init()
             thread = threading.Thread(target=self.handle_worker, args=(ip_addr, self.port))
             thread.start()
