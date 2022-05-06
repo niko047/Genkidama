@@ -1,7 +1,6 @@
 class GeneralSocket(object):
 
-    def __init__(self, addresses, port, lock_free):
-        self.addresses = addresses
+    def __init__(self, port, lock_free):
         self.port = port
         self.lock_free = lock_free
 

@@ -8,8 +8,9 @@ class Client(GeneralSocket):
     def __init__(self, address, port, cores_orchestrator):
 
         # Inside here the blueprint is made into an object
-        super().__init__(address=address, port=port)
+        super().__init__(port=port)
         self.cores_orchestrator = cores_orchestrator
+        self.address = address
 
         # Initializes the client socket
         self.worker_init()

@@ -18,8 +18,9 @@ import threading
 class Parent(GeneralSocket):
 
     def __init__(self, child_addresses, port, network_blueprint, lock_free):
-        super().__init__(addresses=child_addresses, port=port, lock_free=lock_free)
+        super().__init__(port=port, lock_free=lock_free)
 
+        self.addresses = child_addresses
         self.neural_net = network_blueprint()
 
 
