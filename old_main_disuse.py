@@ -7,6 +7,8 @@ from MARL.Manager.manager import Manager
 from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
 from MARL.Nets.neural_net import ToyNet
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
+
 
 mp.set_start_method('spawn', force=True)
 
@@ -14,9 +16,9 @@ LEN_INPUTS_X: int = 2
 LEN_OUTPUTS_Y: int = 1
 LEN_ITERATIONS: int = 50
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 60
+NUM_EPISODES: int = 150
 NUM_STEPS: int = 200
-BATCH_SIZE: int = 5
+BATCH_SIZE: int = 3
 SAMPLE_FROM_SHARED_MEMORY: bool = True
 SAMPLE_WITH_REPLACEMENT: bool = False
 
@@ -32,6 +34,8 @@ TO-DO
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = ToyNet()
+
+    opt = SGD(loc_net.parameters(), lr=0.001, momentum=0.9)
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=cpu_id,
@@ -51,7 +55,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
             b.record_interaction(tensor_tuple)
 
             # Every once in a while
-            if (j + 1) % 2 == 0: #todo 5 gradients step for eGSD
+            if (j + 1) % 3 == 0: #todo 5 gradients step for eGSD
                 # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                 if not NUM_EPISODES:
                     # Do this only for the first absolute run
@@ -64,19 +68,35 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 # Calculates the loss between target and predict
                 loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
                 # Averages the loss if using batches, else only the single value
-                #if cpu_id == 0:
                 res_queue.put(loss.item())
                 # Zeroes the gradients out
                 opt.zero_grad()
                 # Performs calculation of the backward pass
                 loss.backward()
-
-                # Perform the update of the global parameters using the local ones
-                for lp, gp in zip(loc_net.parameters(), glob_net.parameters()):
-                    gp._grad = lp.grad
+                # Performs step of the optimizer
                 opt.step()
 
-                loc_net.load_state_dict(glob_net.state_dict())
+                if (j + 1) % 20 == 0:
+                    # Get the current flat weights of the local net and global one
+                    flat_orch_params = parameters_to_vector(glob_net.parameters())
+                    flat_core_params = parameters_to_vector(loc_net.parameters())
+
+                    # Compute the new weighted params
+                    new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
+                                                                          p2=flat_core_params,
+                                                                          alpha=.1)  # TODO - Change it to a param
+
+                    # Update the parameters of the orchestrator with the new ones
+                    vector_to_parameters(new_orch_params, glob_net.parameters())
+
+                    loc_net.load_state_dict(glob_net.state_dict())
+
+                # Perform the update of the global parameters using the local ones
+                # for lp, gp in zip(loc_net.parameters(), glob_net.parameters()):
+                #     gp._grad = lp.grad
+                # opt.step()
+
+                # loc_net.load_state_dict(glob_net.state_dict())
                 print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {b.cpu_id} is: {loss}')
 
     res_queue.put(None)
@@ -86,7 +106,7 @@ if __name__ == '__main__':
     glob_net = ToyNet()
     glob_net.share_memory()
 
-    opt = SharedAdam(glob_net.parameters(), lr=1e-3, betas=(0.92, 0.999))  # global optimizer
+    # opt = SharedAdam(glob_net.parameters(), lr=1e-3, betas=(0.92, 0.999))  # global optimizer
 
     # Queue used to store the history of rewards while training
     res_queue = mp.Queue()
@@ -99,7 +119,7 @@ if __name__ == '__main__':
     # Creates a starting semaphor
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
-    procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, res_queue)) for i in
+    procs = [mp.Process(target=train_model, args=(glob_net, None, buffer, i, semaphor, res_queue)) for i in
              range(NUM_CPUS)]
 
     [p.start() for p in procs]

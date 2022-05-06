@@ -40,7 +40,7 @@ class SingleCoreProcess(mp.Process):
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
-        self.optimizer = optimizer
+        #self.optimizer = optimizer
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -68,7 +68,7 @@ class SingleCoreProcess(mp.Process):
 
         # TODO - Change
         # self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
-        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.01, momentum=0.9)
+        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.1, momentum=0.9)
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
@@ -126,7 +126,7 @@ class SingleCoreProcess(mp.Process):
                     self.res_queue.put(loss.item())
 
                     # Zeroes the gradients out
-                    self.optimizer.zero_grad()
+                    self.local_optimizer.zero_grad()
 
                     # Performs calculation of the gradients
                     loss.backward()
