@@ -140,18 +140,18 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=.1)  # TODO - Change it to a param
+                                                                              alpha=.3)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                    if j == self.num_steps:
-                        print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
+                if j+1 == self.num_steps:
+                    print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
             # Wait for the green light to avoid overwriting
-            print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
+            # print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
 
             # They're sleeping now, perform updates
             if self.is_designated_core:

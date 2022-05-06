@@ -84,7 +84,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                     # Compute the new weighted params
                     new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                           p2=flat_core_params,
-                                                                          alpha=.1)  # TODO - Change it to a param
+                                                                          alpha=.2)  # TODO - Change it to a param
 
                     # Update the parameters of the orchestrator with the new ones
                     vector_to_parameters(new_orch_params, glob_net.parameters())
