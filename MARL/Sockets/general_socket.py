@@ -1,8 +1,7 @@
 class GeneralSocket(object):
 
-    def __init__(self, port, lock_free):
+    def __init__(self, port):
         self.port = port
-        self.lock_free = lock_free
 
     @staticmethod
     def wait_msg_received(len_true_msg, gsocket):
