@@ -68,7 +68,7 @@ class SingleCoreProcess(mp.Process):
 
         # TODO - Change
         # self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
-        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.1, momentum=0.9)
+        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.001, momentum=0.9)
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
@@ -120,6 +120,7 @@ class SingleCoreProcess(mp.Process):
                     loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
 
                     # Calculates the loss between target and predict
+                    # TODO - Change it to be coming from the network class
                     loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
 
                     # Averages the loss if using batches, else only the single value
@@ -142,14 +143,14 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=1)  # TODO - Change it to a param
+                                                                              alpha=.1)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                    print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
+                print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
             # Wait for the green light to avoid overwriting
             print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
