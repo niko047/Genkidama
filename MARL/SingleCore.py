@@ -40,7 +40,7 @@ class SingleCoreProcess(mp.Process):
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
-        #self.optimizer = optimizer
+        self.optimizer = optimizer
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -66,9 +66,6 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
-        # TODO - Change
-        # self.local_optimizer = Adam(self.single_core_neural_net.parameters(), betas=(0.9, 0.99), eps=1e-3)
-        self.local_optimizer = SGD(self.single_core_neural_net.parameters(), lr=0.001, momentum=0.9)
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
@@ -127,13 +124,13 @@ class SingleCoreProcess(mp.Process):
                     self.res_queue.put(loss.item())
 
                     # Zeroes the gradients out
-                    self.local_optimizer.zero_grad()
+                    self.optimizer.zero_grad()
 
                     # Performs calculation of the gradients
                     loss.backward()
 
                     # Performs backpropagation with the gradients computed
-                    self.local_optimizer.step()
+                    self.optimizer.step()
 
                     if (j + 1) % 20 == 0:
                         # Get the current flat weights of the local net and global one
@@ -150,7 +147,8 @@ class SingleCoreProcess(mp.Process):
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
+                    if j == self.num_steps:
+                        print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
             # Wait for the green light to avoid overwriting
             print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')

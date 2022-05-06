@@ -2,6 +2,7 @@ from MARL.Sockets.child import Client
 from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
 from MARL.Optims.shared_optims import SharedAdam
+from torch.optim import SGD
 import argparse
 
 my_parser = argparse.ArgumentParser(description='Runs the child socket servers')
@@ -27,10 +28,10 @@ ADDRESS = args.ipaddress
 
 # TODO - Set up a different environment for these ones
 neural_net = ToyNet
-shared_optimizer = SharedAdam
+shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr": 1e-3,
-    "betas": (0.92, 0.999)
+    "lr":0.001,
+    "momentum":0.9
 }
 len_interaction_X = 2
 len_interaction_Y = 1
