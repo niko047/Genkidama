@@ -19,6 +19,7 @@ class SingleCoreProcess(mp.Process):
                  cores_waiting_semaphor,
                  ending_semaphor,
                  optimizer,
+                 shared_optimizer_kwargs,
                  buffer,
                  cpu_id,
                  len_interaction_X,
@@ -40,7 +41,7 @@ class SingleCoreProcess(mp.Process):
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
-        self.optimizer = optimizer
+        self.optimizer = optimizer(self.single_core_neural_net.parameters(), **shared_optimizer_kwargs)
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -69,7 +70,6 @@ class SingleCoreProcess(mp.Process):
 
     def run(self):
         # TODO - Initialize the connection here to the designated cpu
-        import os
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
@@ -140,14 +140,12 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=.3)  # TODO - Change it to a param
+                                                                              alpha=.2)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
 
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-
-                if j+1 == self.num_steps:
                     print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
             # Wait for the green light to avoid overwriting
@@ -186,8 +184,8 @@ class SingleCoreProcess(mp.Process):
         self.ending_semaphor[self.cpu_id] = True
 
         # The designated core can then close the connection with the parent
-        if self.is_designated_core:
-            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
+        # if self.is_designated_core:
+        #     Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)

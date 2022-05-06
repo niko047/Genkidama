@@ -49,7 +49,8 @@ class CoresOrchestrator(object):
         self.orchestrator_neural_net = self.neural_net()
         self.orchestrator_neural_net.share_memory()
 
-        self.shared_optimizer = shared_optimizer(self.orchestrator_neural_net.parameters(), **shared_optimizer_kwargs)
+        self.shared_optimizer = shared_optimizer
+        self.shared_optimizer_kwargs = shared_optimizer_kwargs
         self.len_interaction_X = len_interaction_X
         self.len_interaction_Y = len_interaction_Y
         self.batch_size = batch_size
@@ -87,6 +88,7 @@ class CoresOrchestrator(object):
             cores_waiting_semaphor=cores_waiting_semaphor,
             ending_semaphor=ending_semaphor,
             optimizer=self.shared_optimizer,
+            shared_optimizer_kwargs=self.shared_optimizer_kwargs,
             buffer=self.replay_buffer,
             cpu_id=cpu_id,
             len_interaction_X=self.len_interaction_X,
