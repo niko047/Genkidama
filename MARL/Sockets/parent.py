@@ -12,12 +12,13 @@ Sketch of the algorithm:
 
 import socket
 from .general_socket import GeneralSocket
+import threading
 
 
 class Parent(GeneralSocket):
 
-    def __init__(self, child_address, port, network_blueprint):
-        super().__init__(address=child_address, port=port)
+    def __init__(self, child_address, port, network_blueprint, lock_free):
+        super().__init__(address=child_address, port=port, lock_free=lock_free)
 
         self.neural_net = network_blueprint()
 
@@ -105,3 +106,7 @@ class Parent(GeneralSocket):
             # Interaction has been truncated, close connection
             print(f'[PARENT] Correctly closing parent')
             parent.close()
+
+    def handle_worker_multithreading(self):
+        thread = threading.Thread(target=self.handle_worker)
+        thread.start()

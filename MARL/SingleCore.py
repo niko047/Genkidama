@@ -5,8 +5,6 @@ from MARL.Sockets.child import Client
 import torch.nn.functional as F
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
-import torch.nn as nn
-from torch.optim import Adam, SGD
 
 
 class SingleCoreProcess(mp.Process):

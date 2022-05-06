@@ -3,6 +3,9 @@ from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
 
 import argparse
+
+
+# TODO - First version is going to use the lock threads, therefore it is not going to be a parent Hogwild
 my_parser = argparse.ArgumentParser(description='Runs the parent socket servers')
 
 my_parser.add_argument('-ip',
@@ -20,11 +23,12 @@ args = my_parser.parse_args()
 
 PORT = args.port
 ADDRESS = args.ipaddress
+IS_LOCKFREE = False
 
 
 def start_parent():
     s = Parent(child_address=ADDRESS, port=PORT, network_blueprint=ToyNet)
-    s.handle_worker()
+    s.handle_worker_multithreading()
 
 if __name__ == '__main__':
     start = timer()
