@@ -17,8 +17,8 @@ import threading
 
 class Parent(GeneralSocket):
 
-    def __init__(self, child_address, port, network_blueprint, lock_free):
-        super().__init__(address=child_address, port=port, lock_free=lock_free)
+    def __init__(self, child_addresses, port, network_blueprint, lock_free):
+        super().__init__(addresses=child_addresses, port=port, lock_free=lock_free)
 
         self.neural_net = network_blueprint()
 
@@ -108,5 +108,6 @@ class Parent(GeneralSocket):
             parent.close()
 
     def handle_worker_multithreading(self):
-        thread = threading.Thread(target=self.handle_worker)
-        thread.start()
+        for ip_addr in self.addresses:
+            thread = threading.Thread(target=self.handle_worker, args=(ip_addr, self.port))
+            thread.start()

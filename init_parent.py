@@ -10,6 +10,7 @@ my_parser = argparse.ArgumentParser(description='Runs the parent socket servers'
 
 my_parser.add_argument('-ip',
                        '--ipaddress',
+                       nargs='+',
                        type=str,
                        help='ip on which to run socket',
                        default='127.0.0.1')
@@ -22,12 +23,12 @@ args = my_parser.parse_args()
 
 
 PORT = args.port
-ADDRESS = args.ipaddress
+ADDRESSES = args.ipaddress
 IS_LOCKFREE = False
 
 
 def start_parent():
-    s = Parent(child_address=ADDRESS, port=PORT, network_blueprint=ToyNet)
+    s = Parent(child_addresses=ADDRESSES, port=PORT, network_blueprint=ToyNet)
     s.handle_worker_multithreading()
 
 if __name__ == '__main__':
