@@ -29,10 +29,10 @@ shared_opt_kwargs = {
     "lr": 1e-5,
     "momentum": 0.9
 }
-len_interaction_X = 2
+len_interaction_X = 1
 len_interaction_Y = 1
-batch_size = 100
-num_iters = 100
+batch_size = 5
+num_iters = 5
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
