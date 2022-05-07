@@ -113,10 +113,10 @@ class SingleCoreProcess(mp.Process):
                         sampled_batch = self.b.random_sample_batch()
 
                         # Forward pass of the neural net, until the output columns, in this case last one
-                        loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1][0])
+                        loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
 
                         # Calculates the loss between target and predict
-                        target = torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1)
+                        target = torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1)
                         loss = self.single_core_neural_net.loss(loc_output, target)
 
                         # Averages the loss if using batches, else only the single value

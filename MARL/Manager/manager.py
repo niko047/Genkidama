@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.multiprocessing as mp
 import random
@@ -20,10 +22,10 @@ class Manager(object):
     # NOTE: change the code below according to your needs
 
     @staticmethod
-    def f_true(x, y): return x ** 2 + y ** 2
+    def f_true(x): return math.sin(x)
 
     @staticmethod
-    def generate_input(): return [(random.random() - .5) * 10, (random.random() - .5) * 10]
+    def generate_input(): return (random.random() - .5) * 6 #approx from -pi to pi
 
     @staticmethod
     def data_generative_mechanism():
@@ -31,9 +33,9 @@ class Manager(object):
 
         # Generate our data, where last column is output
         inputs = Manager.generate_input()
-        output = Manager.f_true(*inputs)
+        output = Manager.f_true(inputs)
 
-        return torch.Tensor([*inputs, output]).to(torch.float32)
+        return torch.Tensor([inputs, output]).to(torch.float32)
 
     @staticmethod
     def wait_for_green_light(semaphor: mp.Array, cpu_id: int):

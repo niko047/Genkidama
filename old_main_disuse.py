@@ -12,13 +12,13 @@ from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 mp.set_start_method('spawn', force=True)
 
-LEN_INPUTS_X: int = 2
+LEN_INPUTS_X: int = 1
 LEN_OUTPUTS_Y: int = 1
 LEN_ITERATIONS: int = 50
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 150
+NUM_EPISODES: int = 1000
 NUM_STEPS: int = 200
-BATCH_SIZE: int = 1
+BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = True
 SAMPLE_WITH_REPLACEMENT: bool = False
 
@@ -35,7 +35,7 @@ TO-DO
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = ToyNet()
 
-    opt = SGD(loc_net.parameters(), lr=1e-6, momentum=0.9)
+    opt = SGD(loc_net.parameters(), lr=1e-5, momentum=0.9)
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=cpu_id,
@@ -55,7 +55,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
             b.record_interaction(tensor_tuple)
 
             # Every once in a while
-            if (j + 1) % 1 == 0: #todo 5 gradients step for eGSD
+            if (j + 1) % 5 == 0: #todo 5 gradients step for eGSD
                 # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                 if not NUM_EPISODES:
                     # Do this only for the first absolute run
@@ -64,10 +64,9 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 # Random samples a batch
                 sampled_batch = b.random_sample_batch()
                 # Forward pass of the neural net, until the output columns, in this case last one
-                print(sampled_batch[:, :-1][0])
-                loc_output = loc_net.forward(sampled_batch[:, :-1][0])
+                loc_output = loc_net.forward(sampled_batch[:, :-1])
                 # Calculates the loss between target and predict
-                loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1))
+                loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
                 # Averages the loss if using batches, else only the single value
                 res_queue.put(loss.item())
                 # Zeroes the gradients out
@@ -77,7 +76,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 # Performs step of the optimizer
                 opt.step()
 
-                if (j + 1) % 20 == 0:
+                if (j + 1) % 25 == 0:
                     # Get the current flat weights of the local net and global one
                     flat_orch_params = parameters_to_vector(glob_net.parameters())
                     flat_core_params = parameters_to_vector(loc_net.parameters())
@@ -85,7 +84,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                     # Compute the new weighted params
                     new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                           p2=flat_core_params,
-                                                                          alpha=.2)  # TODO - Change it to a param
+                                                                          alpha=.7)  # TODO - Change it to a param
 
                     # Update the parameters of the orchestrator with the new ones
                     vector_to_parameters(new_orch_params, glob_net.parameters())
