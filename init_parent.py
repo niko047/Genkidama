@@ -1,3 +1,5 @@
+import threading
+
 from MARL.Sockets.parent import Parent
 from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
@@ -24,12 +26,12 @@ args = my_parser.parse_args()
 
 PORT = args.port
 ADDRESSES = args.ipaddress
-IS_LOCKFREE = False
 
 
 def start_parent():
-    s = Parent(child_addresses=ADDRESSES, port=PORT, network_blueprint=ToyNet)
-    s.handle_worker_multithreading()
+    for address in ADDRESSES:
+        s = Parent(child_address=address, port=PORT, network_blueprint=ToyNet)
+        s.run()
 
 if __name__ == '__main__':
     start = timer()

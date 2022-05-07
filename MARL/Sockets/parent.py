@@ -17,13 +17,11 @@ import threading
 
 class Parent(GeneralSocket):
 
-    def __init__(self, child_addresses, port, network_blueprint, lock_free):
+    def __init__(self, child_address, port, network_blueprint):
         super().__init__(port=port)
 
-        self.addresses = child_addresses
+        self.address = child_address
         self.neural_net = network_blueprint()
-        self.lock_free = lock_free
-
 
 
     def parent_init(self, address, port):
@@ -95,8 +93,10 @@ class Parent(GeneralSocket):
             # Simple count of the number of interactions
             interaction_count += 1
 
-    def handle_worker(self):
+    def handle_client(self):
         """Handles the worker, all the functionality is inside here"""
+        self.parent_init(address=self.address, port=self.port)
+
         with self.parent as parent:
             # Gets some starting information to initialize the connection
             len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
@@ -108,8 +108,5 @@ class Parent(GeneralSocket):
             print(f'[PARENT] Correctly closing parent')
             parent.close()
 
-    def handle_worker_multithreading(self):
-        for ip_addr in self.addresses:
-            self.parent_init()
-            thread = threading.Thread(target=self.handle_worker, args=(ip_addr, self.port))
-            thread.start()
+    def run(self):
+        threading.Thread(target=self.handle_client, args=()).start()
