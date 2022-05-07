@@ -32,12 +32,12 @@ shared_opt_kwargs = {
 len_interaction_X = 2
 len_interaction_Y = 1
 batch_size = 1
-num_iters = 50
+num_iters = 10
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
 num_steps = 50
-num_episodes = 150
+num_episodes = 50
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function

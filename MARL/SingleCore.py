@@ -91,7 +91,7 @@ class SingleCoreProcess(mp.Process):
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
-            for j in range(self.num_steps):
+            for j in range(self.num_steps) and not self.is_designated_core:
 
                 # Generates some data according to the data generative mechanism
                 tensor_tuple = Manager.data_generative_mechanism()
@@ -105,7 +105,7 @@ class SingleCoreProcess(mp.Process):
                     if i == 0:
                         # Do this only for the first absolute run
                         self.starting_semaphor[self.cpu_id] = True
-                        while not torch.all(self.starting_semaphor):
+                        while not torch.all(self.starting_semaphor[1:]):
                             pass
 
                     # Random samples a batch
