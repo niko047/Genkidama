@@ -26,7 +26,7 @@ ADDRESS = args.ipaddress
 neural_net = ToyNet
 shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr": 1e-5,
+    "lr": 1e-4,
     "momentum": 0.9
 }
 len_interaction_X = 1

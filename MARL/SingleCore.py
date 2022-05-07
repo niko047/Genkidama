@@ -131,7 +131,7 @@ class SingleCoreProcess(mp.Process):
                         # Performs backpropagation with the gradients computed
                         self.optimizer.step()
 
-                        if (j + 1) % 20 == 0:
+                        if (j + 1) % 25 == 0:
                             # Get the current flat weights of the local net and global one
                             flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
                             flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
@@ -139,7 +139,7 @@ class SingleCoreProcess(mp.Process):
                             # Compute the new weighted params
                             new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                                   p2=flat_core_params,
-                                                                                  alpha=.25)  # TODO - Change it to a param
+                                                                                  alpha=.3)  # TODO - Change it to a param
 
                             # Update the parameters of the orchestrator with the new ones
                             vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())

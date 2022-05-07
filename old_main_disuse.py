@@ -14,7 +14,7 @@ mp.set_start_method('spawn', force=True)
 
 LEN_INPUTS_X: int = 1
 LEN_OUTPUTS_Y: int = 1
-LEN_ITERATIONS: int = 50
+LEN_ITERATIONS: int = 5
 NUM_CPUS: int = mp.cpu_count()
 NUM_EPISODES: int = 1000
 NUM_STEPS: int = 200
