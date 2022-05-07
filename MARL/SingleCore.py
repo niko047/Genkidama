@@ -168,6 +168,8 @@ class SingleCoreProcess(mp.Process):
                     len_msg_bytes=len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
 
+                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
 
@@ -178,7 +180,8 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             # Pull parameters from orchestrator to each single node
-            self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+            if not self.is_designated_core:
+                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
