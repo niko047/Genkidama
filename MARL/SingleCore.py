@@ -86,13 +86,13 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
-            print(f"Implementing the parameters received to the local core net")
-
-            self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
+            # print(f"Implementing the parameters received to the local core net")
+            # self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
             for j in range(self.num_steps):
+
                 # Generates some data according to the data generative mechanism
                 tensor_tuple = Manager.data_generative_mechanism()
 
@@ -112,11 +112,9 @@ class SingleCoreProcess(mp.Process):
                     sampled_batch = self.b.random_sample_batch()
 
                     # Forward pass of the neural net, until the output columns, in this case last one
-                    print(sampled_batch[:, :-1])
                     loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1][0])
 
                     # Calculates the loss between target and predict
-                    # TODO - Change it to be coming from the network class
                     target = torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1)
                     loss = self.single_core_neural_net.loss(loc_output, target)
 
@@ -132,7 +130,7 @@ class SingleCoreProcess(mp.Process):
                     # Performs backpropagation with the gradients computed
                     self.optimizer.step()
 
-                    if (j + 1) % 20 == 0:
+                    if (j + 1) % 5 == 0:
                         # Get the current flat weights of the local net and global one
                         flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
                         flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
@@ -148,8 +146,6 @@ class SingleCoreProcess(mp.Process):
                         self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
                     print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
-            # Wait for the green light to avoid overwriting
-            # print(f'[CORE {self.cpu_id}] Semaphor is currently {self.cores_waiting_semaphor}')
 
             # They're sleeping now, perform updates
             if self.is_designated_core:
@@ -168,8 +164,6 @@ class SingleCoreProcess(mp.Process):
                     len_msg_bytes=len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
 
-                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
 
@@ -180,15 +174,14 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             # Pull parameters from orchestrator to each single node
-            if not self.is_designated_core:
-                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+            self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
 
         # The designated core can then close the connection with the parent
-        # if self.is_designated_core:
-        #     Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
+        if self.is_designated_core:
+            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
