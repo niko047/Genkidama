@@ -18,7 +18,7 @@ LEN_ITERATIONS: int = 50
 NUM_CPUS: int = mp.cpu_count()
 NUM_EPISODES: int = 150
 NUM_STEPS: int = 200
-BATCH_SIZE: int = 3
+BATCH_SIZE: int = 1
 SAMPLE_FROM_SHARED_MEMORY: bool = True
 SAMPLE_WITH_REPLACEMENT: bool = False
 
@@ -35,7 +35,7 @@ TO-DO
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = ToyNet()
 
-    opt = SGD(loc_net.parameters(), lr=0.001, momentum=0.9)
+    opt = SGD(loc_net.parameters(), lr=1e-6, momentum=0.9)
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=cpu_id,
@@ -55,7 +55,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
             b.record_interaction(tensor_tuple)
 
             # Every once in a while
-            if (j + 1) % 3 == 0: #todo 5 gradients step for eGSD
+            if (j + 1) % 1 == 0: #todo 5 gradients step for eGSD
                 # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                 if not NUM_EPISODES:
                     # Do this only for the first absolute run
@@ -64,9 +64,10 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 # Random samples a batch
                 sampled_batch = b.random_sample_batch()
                 # Forward pass of the neural net, until the output columns, in this case last one
-                loc_output = loc_net.forward(sampled_batch[:, :-1])
+                print(sampled_batch[:, :-1][0])
+                loc_output = loc_net.forward(sampled_batch[:, :-1][0])
                 # Calculates the loss between target and predict
-                loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
+                loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1))
                 # Averages the loss if using batches, else only the single value
                 res_queue.put(loss.item())
                 # Zeroes the gradients out

@@ -88,7 +88,7 @@ class SingleCoreProcess(mp.Process):
 
             print(f"Implementing the parameters received to the local core net")
 
-            self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+            self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
@@ -100,7 +100,7 @@ class SingleCoreProcess(mp.Process):
                 self.b.record_interaction(tensor_tuple)
 
                 # Every once in a while, define better this condition
-                if (j + 1) % 3 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
+                if (j + 1) % 1 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
                     # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                     if i == 0:
                         # Do this only for the first absolute run
@@ -112,11 +112,13 @@ class SingleCoreProcess(mp.Process):
                     sampled_batch = self.b.random_sample_batch()
 
                     # Forward pass of the neural net, until the output columns, in this case last one
-                    loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
+                    print(sampled_batch[:, :-1])
+                    loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1][0])
 
                     # Calculates the loss between target and predict
                     # TODO - Change it to be coming from the network class
-                    loss = F.mse_loss(loc_output, torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1))
+                    target = torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1)
+                    loss = self.single_core_neural_net.loss(loc_output, target)
 
                     # Averages the loss if using batches, else only the single value
                     self.res_queue.put(loss.item())
@@ -138,7 +140,7 @@ class SingleCoreProcess(mp.Process):
                         # Compute the new weighted params
                         new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
                                                                               p2=flat_core_params,
-                                                                              alpha=.2)  # TODO - Change it to a param
+                                                                              alpha=.3)  # TODO - Change it to a param
 
                         # Update the parameters of the orchestrator with the new ones
                         vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())

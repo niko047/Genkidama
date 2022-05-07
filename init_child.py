@@ -22,25 +22,21 @@ args = my_parser.parse_args()
 PORT = args.port
 ADDRESS = args.ipaddress
 
-
-
-
-
 # TODO - Set up a different environment for these ones
 neural_net = ToyNet
 shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr":0.001,
-    "momentum":0.9
+    "lr": 1e-5,
+    "momentum": 0.9
 }
 len_interaction_X = 2
 len_interaction_Y = 1
-batch_size = 3
+batch_size = 1
 num_iters = 50
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_steps = 200
+num_steps = 50
 num_episodes = 150
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
