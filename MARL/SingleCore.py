@@ -91,60 +91,61 @@ class SingleCoreProcess(mp.Process):
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
-            for j in range(self.num_steps) and not self.is_designated_core:
+            for j in range(self.num_steps):
+                if not self.is_designated_core:
 
-                # Generates some data according to the data generative mechanism
-                tensor_tuple = Manager.data_generative_mechanism()
+                    # Generates some data according to the data generative mechanism
+                    tensor_tuple = Manager.data_generative_mechanism()
 
-                # Records the interaction inside the shared Tensor buffer
-                self.b.record_interaction(tensor_tuple)
+                    # Records the interaction inside the shared Tensor buffer
+                    self.b.record_interaction(tensor_tuple)
 
-                # Every once in a while, define better this condition
-                if (j + 1) % 1 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
-                    # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
-                    if i == 0:
-                        # Do this only for the first absolute run
-                        self.starting_semaphor[self.cpu_id] = True
-                        while not torch.all(self.starting_semaphor[1:]):
-                            pass
+                    # Every once in a while, define better this condition
+                    if (j + 1) % 1 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
+                        # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
+                        if i == 0:
+                            # Do this only for the first absolute run
+                            self.starting_semaphor[self.cpu_id] = True
+                            while not torch.all(self.starting_semaphor[1:]):
+                                pass
 
-                    # Random samples a batch
-                    sampled_batch = self.b.random_sample_batch()
+                        # Random samples a batch
+                        sampled_batch = self.b.random_sample_batch()
 
-                    # Forward pass of the neural net, until the output columns, in this case last one
-                    loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1][0])
+                        # Forward pass of the neural net, until the output columns, in this case last one
+                        loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1][0])
 
-                    # Calculates the loss between target and predict
-                    target = torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1)
-                    loss = self.single_core_neural_net.loss(loc_output, target)
+                        # Calculates the loss between target and predict
+                        target = torch.Tensor(sampled_batch[:, -1][0]).reshape(-1, 1)
+                        loss = self.single_core_neural_net.loss(loc_output, target)
 
-                    # Averages the loss if using batches, else only the single value
-                    self.res_queue.put(loss.item())
+                        # Averages the loss if using batches, else only the single value
+                        self.res_queue.put(loss.item())
 
-                    # Zeroes the gradients out
-                    self.optimizer.zero_grad()
+                        # Zeroes the gradients out
+                        self.optimizer.zero_grad()
 
-                    # Performs calculation of the gradients
-                    loss.backward()
+                        # Performs calculation of the gradients
+                        loss.backward()
 
-                    # Performs backpropagation with the gradients computed
-                    self.optimizer.step()
+                        # Performs backpropagation with the gradients computed
+                        self.optimizer.step()
 
-                    if (j + 1) % 5 == 0:
-                        # Get the current flat weights of the local net and global one
-                        flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-                        flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
+                        if (j + 1) % 5 == 0:
+                            # Get the current flat weights of the local net and global one
+                            flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+                            flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
 
-                        # Compute the new weighted params
-                        new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
-                                                                              p2=flat_core_params,
-                                                                              alpha=.3)  # TODO - Change it to a param
+                            # Compute the new weighted params
+                            new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
+                                                                                  p2=flat_core_params,
+                                                                                  alpha=.3)  # TODO - Change it to a param
 
-                        # Update the parameters of the orchestrator with the new ones
-                        vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
+                            # Update the parameters of the orchestrator with the new ones
+                            vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
 
-                        self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-                    print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
+                            self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+                        print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
 
 
             # They're sleeping now, perform updates
