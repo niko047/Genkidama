@@ -10,7 +10,10 @@ class ReplayBuffers(object):
                  batch_size: int,
                  tot_num_cpus: int,
                  replacement: bool,
-                 sample_from_shared_memory: bool):
+                 sample_from_shared_memory: bool,
+                 len_state: int,
+                 len_action: int,
+                 len_reward: int):
         """
         :param shared_replay_buffer:    Tensor shared amongst CPU processes
         :param cpu_id:                  Unique id of the CPU using the current object
@@ -29,6 +32,10 @@ class ReplayBuffers(object):
         self.replacement = replacement
         self.batch_size = batch_size
         self.sample_from_shared_memory = sample_from_shared_memory
+
+        self.len_state = len_state
+        self.len_action = len_action
+        self.len_reward = len_reward
 
     @staticmethod
     def init_global_buffer(len_interaction: int,
@@ -65,6 +72,9 @@ class ReplayBuffers(object):
     @staticmethod
     def random_sample_batch_(shared_buffer: torch.Tensor,
                              len_interaction: int,
+                             len_state: int,
+                             len_action: int,
+                             len_reward: int,
                              num_iters: int,
                              tot_num_cpus: int,
                              batch_size: int,
@@ -92,17 +102,20 @@ class ReplayBuffers(object):
         else:
             idxs = torch.randperm(len(masked_buffer))[:batch_size]
 
-        return masked_buffer[idxs]
+        return masked_buffer[idxs, : len_state],\
+               masked_buffer[idxs, len_state : len_state + len_action],\
+               masked_buffer[idxs, len_state + len_action:]
 
     def random_sample_batch(self) -> torch.Tensor:
         """Random samples a batch from shared buffer to update the network's weights"""
-        update_batch = self.random_sample_batch_(shared_buffer=self.shared_replay_buffer,
+        state, action, reward = self.random_sample_batch_(shared_buffer=self.shared_replay_buffer,
                                                  len_interaction=self.len_interaction,
+                                                 len_state=self.len_state,
+                                                 len_action=self.len_action,
+                                                 len_reward=self.len_reward,
                                                  num_iters=self.num_iters,
                                                  tot_num_cpus=self.tot_num_cpus,
                                                  batch_size=self.batch_size,
                                                  replacement=self.replacement,
                                                  cpu_id=None if self.sample_from_shared_memory else self.cpu_id)
-        return update_batch
-
-    # TODO - Add another method which separates the X and the Y, since they're all together in the buffer's row
+        return state, action, reward
