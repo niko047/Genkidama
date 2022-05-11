@@ -2,10 +2,17 @@ import torch.multiprocessing as mp
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Sockets.child import Client
-import torch.nn.functional as F
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+import gym
 
+
+# TODO - New steps to be carried out:
+# TODO 1. Fix the replay buffer to accept (state, action, reward) and not anymore only X and Y
+# DONE, now the sampling returns the following -> s, a, r = buff.random_sample_batch()
+# TODO 2. Set up the environment and connect it at every step of the process
+# TODO 3. Set up the mechanism of going back to actualize the rewards BEFORE storing them in the buffer
+# TODO 4 (?). Implement a buffer that is emptied when a row is smapled (? would take away efficiency in parallel access)
 
 class SingleCoreProcess(mp.Process):
     """Class defining the behavior of each process running in each CPU core in the machine"""
@@ -13,6 +20,7 @@ class SingleCoreProcess(mp.Process):
     def __init__(self,
                  single_core_neural_net,
                  cores_orchestrator_neural_net,
+                 gym_rl_env_str,
                  starting_semaphor,
                  cores_waiting_semaphor,
                  ending_semaphor,
@@ -20,8 +28,9 @@ class SingleCoreProcess(mp.Process):
                  shared_optimizer_kwargs,
                  buffer,
                  cpu_id,
-                 len_interaction_X,
-                 len_interaction_Y,
+                 len_state,
+                 len_actions,
+                 len_reward,
                  batch_size,
                  num_iters,
                  tot_num_active_cpus,
@@ -36,6 +45,14 @@ class SingleCoreProcess(mp.Process):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net()
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
+
+        self.rl_env = gym.make(gym_rl_env_str)
+        # TODO - Define what has to be saved in the buffer
+        # (*states, *actions, *actualized_rewards)
+        self.len_state = len_state
+        self.len_actions = len_actions
+        self.len_reward = len_reward
+
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
@@ -43,15 +60,17 @@ class SingleCoreProcess(mp.Process):
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
-            len_interaction=len_interaction_X + len_interaction_Y,
+            len_interaction=len_state + len_actions + len_reward,
             batch_size=batch_size,  # If increased it's crap
             num_iters=num_iters,
             tot_num_cpus=tot_num_active_cpus,
             replacement=replacement,
-            sample_from_shared_memory=sample_from_shared_memory)
+            sample_from_shared_memory=sample_from_shared_memory,
+            len_state=self.len_state,
+            len_action=1,  # Change in case of a problem with multiple actions necessary
+            len_reward=1  # Change in case of a problem with multiple rewards necessary
+        )
         self.cpu_id = cpu_id
-        self.len_interaction_X = len_interaction_X
-        self.len_interaction_Y = len_interaction_Y
         self.batch_size = batch_size
         self.num_iters = num_iters
         self.tot_num_active_cpus = tot_num_active_cpus
@@ -65,9 +84,7 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
-
     def run(self):
-        # TODO - Initialize the connection here to the designated cpu
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
@@ -91,9 +108,10 @@ class SingleCoreProcess(mp.Process):
 
         for i in range(self.num_episodes):
             # Generate training data and update buffer
+            # TODO - Reset the environemnt here, since another episode is about to begin
             for j in range(self.num_steps):
                 if not self.is_designated_core:
-
+                    # TODO - Change it with an interaction with the environment
                     # Generates some data according to the data generative mechanism
                     tensor_tuple = Manager.data_generative_mechanism()
 
@@ -146,7 +164,6 @@ class SingleCoreProcess(mp.Process):
 
                             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
                         print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
-
 
             # They're sleeping now, perform updates
             if self.is_designated_core:

@@ -57,6 +57,8 @@ class Manager(object):
         :param alpha: Relevance of the second vector of parameters with respect to the first one
         :return: Weighted average between two flattened tensors of parameters
         """
+        print(f'P1 is {p1}')
+        print(f'P2 is {p2}')
         return (1 - alpha) * p1 + alpha * p2
 
 

@@ -4,6 +4,7 @@ from MARL.Nets.neural_net import ToyNet
 from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
 import argparse
+import gym
 
 my_parser = argparse.ArgumentParser(description='Runs the child socket servers')
 
@@ -24,13 +25,22 @@ ADDRESS = args.ipaddress
 
 # TODO - Set up a different environment for these ones
 neural_net = ToyNet
+gym_rl_env_str = "CartPole-v1"
+
+# Initialize environment just to retrieve informations and then close it
+env = gym.make(gym_rl_env_str)
+
+len_state = env.observation_space.shape[0]
+len_actions = env.action_space.n
+len_reward = 1
+
+
 shared_optimizer = SGD
 shared_opt_kwargs = {
     "lr": 1e-4,
     "momentum": 0.9
 }
-len_interaction_X = 1
-len_interaction_Y = 1
+
 batch_size = 5
 num_iters = 5
 replacement = False
@@ -47,10 +57,12 @@ alpha = 1
 def start_child():
     cores_orchestrator = CoresOrchestrator(
         neural_net=neural_net,
+        gym_rl_env_str=gym_rl_env_str,
         shared_optimizer=shared_optimizer,
         shared_optimizer_kwargs=shared_opt_kwargs,
-        len_interaction_X=len_interaction_X,
-        len_interaction_Y=len_interaction_Y,
+        len_state=len_state,
+        len_actions=len_actions,
+        len_reward=1,
         batch_size=batch_size,
         num_iters=num_iters,
         replacement=replacement,

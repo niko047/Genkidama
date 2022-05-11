@@ -16,10 +16,12 @@ class CoresOrchestrator(object):
 
     def __init__(self,
                  neural_net,
+                 gym_rl_env_str,
                  shared_optimizer,
                  shared_optimizer_kwargs,
-                 len_interaction_X,
-                 len_interaction_Y,
+                 len_state,
+                 len_actions,
+                 len_reward,
                  batch_size,
                  num_iters,
                  replacement,
@@ -49,10 +51,15 @@ class CoresOrchestrator(object):
         self.orchestrator_neural_net = self.neural_net()
         self.orchestrator_neural_net.share_memory()
 
+        self.gym_rl_env_str = gym_rl_env_str
+
         self.shared_optimizer = shared_optimizer
         self.shared_optimizer_kwargs = shared_optimizer_kwargs
-        self.len_interaction_X = len_interaction_X
-        self.len_interaction_Y = len_interaction_Y
+
+        self.len_state = len_state
+        self.len_actions = len_actions
+        self.len_reward = len_reward
+
         self.batch_size = batch_size
         self.num_iters = num_iters
         self.replacement = replacement
@@ -61,7 +68,7 @@ class CoresOrchestrator(object):
         self.n_cores = mp.cpu_count()
         self.n_available_cores = math.floor(self.n_cores * cpu_capacity)
 
-        self.replay_buffer = ReplayBuffers.init_global_buffer(len_interaction=len_interaction_X + len_interaction_Y,
+        self.replay_buffer = ReplayBuffers.init_global_buffer(len_interaction=len_state + len_actions + len_reward,
                                                               # 2 inputs + 1 output
                                                               num_iters=num_iters,
                                                               tot_num_cpus=self.n_available_cores,
@@ -84,6 +91,7 @@ class CoresOrchestrator(object):
         procs = [SingleCoreProcess(
             single_core_neural_net=self.neural_net,
             cores_orchestrator_neural_net=self.orchestrator_neural_net,
+            gym_rl_env_str=self.gym_rl_env_str,
             starting_semaphor=starting_semaphor,
             cores_waiting_semaphor=cores_waiting_semaphor,
             ending_semaphor=ending_semaphor,
@@ -91,8 +99,9 @@ class CoresOrchestrator(object):
             shared_optimizer_kwargs=self.shared_optimizer_kwargs,
             buffer=self.replay_buffer,
             cpu_id=cpu_id,
-            len_interaction_X=self.len_interaction_X,
-            len_interaction_Y=self.len_interaction_Y,
+            len_state=self.len_state,
+            len_actions=self.len_actions,
+            len_reward=self.len_reward,
             batch_size=self.batch_size,
             num_iters=self.num_iters,
             tot_num_active_cpus=self.n_available_cores,
@@ -116,24 +125,7 @@ class CoresOrchestrator(object):
                 res.append(r)
             else:
                 break
+                # Join the processes (terminate them)
         [p.join() for p in procs]
 
-
-        # Code for plotting the rewards
-        #
-        # import matplotlib.pyplot as plt
-        # import pandas as pd
-        # n_steps = 30
-        #
-        # time_series_df = pd.DataFrame(res)
-        # smooth_path = time_series_df.rolling(n_steps).mean()
-        #
-        # # Plotting:
-        # plt.plot(smooth_path, linewidth=2)  # mean curve.
-        #
-        # plt.ylabel('Loss')
-        # plt.xlabel('Step of the NN')
-        # plt.show()
-
-        # Join the processes (terminate them)
         print(f'Processes have finished running.')
