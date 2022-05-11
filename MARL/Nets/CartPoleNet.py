@@ -26,9 +26,9 @@ class CartPoleNet(nn.Module, GeneralNeuralNet):
     def choose_action(self, s):
         self.eval()
         logits, _ = self.forward(s)
-        prob = F.softmax(logits, dim=1).data
+        prob = F.softmax(logits, dim=0).data
         m = self.distribution(prob)
-        return m.sample().numpy()[0]
+        return m.sample().numpy()
 
     def loss_func(self, s, a, v_t):
         self.train()
@@ -36,7 +36,7 @@ class CartPoleNet(nn.Module, GeneralNeuralNet):
         td = v_t - values
         c_loss = td.pow(2)
 
-        probs = F.softmax(logits, dim=1).reshape(-1,)
+        probs = F.softmax(logits, dim=1)
         m = self.distribution(probs)
         exp_v = m.log_prob(a) * td.detach().squeeze()
         a_loss = -exp_v

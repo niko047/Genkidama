@@ -44,8 +44,12 @@ class Manager(object):
             pass
 
     @staticmethod
-    def turn_off_semaphor_lights(semaphor: mp.Array):
-        semaphor[:] = False
+    def turn_off_semaphor_lights(semaphor: mp.Array, cpu_id: int):
+        while torch.all(semaphor):
+            if not cpu_id:
+                semaphor[:] = False
+            pass
+
 
 
     @staticmethod
@@ -57,8 +61,6 @@ class Manager(object):
         :param alpha: Relevance of the second vector of parameters with respect to the first one
         :return: Weighted average between two flattened tensors of parameters
         """
-        print(f'P1 is {p1}')
-        print(f'P2 is {p2}')
         return (1 - alpha) * p1 + alpha * p2
 
 
