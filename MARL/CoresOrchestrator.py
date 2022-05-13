@@ -48,7 +48,7 @@ class CoresOrchestrator(object):
         self.neural_net = neural_net
 
         # Defines a precise object orchestrator neural net from the blueprint and shares its memory
-        self.orchestrator_neural_net = self.neural_net()
+        self.orchestrator_neural_net = self.neural_net(s_dim=4, a_dim=2) # TODO - Change
         self.orchestrator_neural_net.share_memory()
 
         self.gym_rl_env_str = gym_rl_env_str
@@ -56,8 +56,6 @@ class CoresOrchestrator(object):
         self.shared_optimizer = shared_optimizer(self.orchestrator_neural_net.parameters(), **shared_optimizer_kwargs)
 
         self.len_state = len_state
-        self.len_actions = len_actions
-        self.len_reward = len_reward
 
         self.batch_size = batch_size
         self.num_iters = num_iters
@@ -67,7 +65,7 @@ class CoresOrchestrator(object):
         self.n_cores = mp.cpu_count()
         self.n_available_cores = math.floor(self.n_cores * cpu_capacity)
 
-        self.replay_buffer = ReplayBuffers.init_global_buffer(len_interaction=len_state + len_actions + len_reward,
+        self.replay_buffer = ReplayBuffers.init_global_buffer(len_interaction=len_state + 1 + 1,
                                                               # 2 inputs + 1 output
                                                               num_iters=num_iters,
                                                               tot_num_cpus=self.n_available_cores,
@@ -99,8 +97,6 @@ class CoresOrchestrator(object):
             buffer=self.replay_buffer,
             cpu_id=cpu_id,
             len_state=self.len_state,
-            len_actions=self.len_actions,
-            len_reward=self.len_reward,
             batch_size=self.batch_size,
             num_iters=self.num_iters,
             tot_num_active_cpus=self.n_available_cores,

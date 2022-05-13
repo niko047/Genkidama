@@ -28,8 +28,6 @@ class SingleCoreProcess(mp.Process):
                  buffer,
                  cpu_id,
                  len_state,
-                 len_actions,
-                 len_reward,
                  batch_size,
                  num_iters,
                  tot_num_active_cpus,
@@ -42,15 +40,13 @@ class SingleCoreProcess(mp.Process):
                  address
                  ):
         super(SingleCoreProcess, self).__init__()
-        self.single_core_neural_net = single_core_neural_net()
+        self.single_core_neural_net = single_core_neural_net(s_dim=4, a_dim=2)
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
 
         self.env = gym.make(gym_rl_env_str)
         # TODO - Define what has to be saved in the buffer
         # (*states, *actions, *actualized_rewards)
         self.len_state = len_state
-        self.len_actions = len_actions
-        self.len_reward = len_reward
 
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
@@ -59,15 +55,15 @@ class SingleCoreProcess(mp.Process):
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
-            len_interaction=len_state + len_actions + len_reward,
+            len_interaction=len_state + 1 + 1,
             batch_size=batch_size,  # If increased it's crap
             num_iters=num_iters,
             tot_num_cpus=tot_num_active_cpus,
             replacement=replacement,
             sample_from_shared_memory=sample_from_shared_memory,
             len_state=self.len_state,
-            len_action=1,  # Change in case of a problem with multiple actions necessary
-            len_reward=1  # Change in case of a problem with multiple rewards necessary
+            len_action= 1,  # Change in case of a problem with multiple actions necessary
+            len_reward= 1  # Change in case of a problem with multiple rewards necessary
         )
         self.cpu_id = cpu_id
         self.batch_size = batch_size

@@ -3,6 +3,7 @@ import threading
 from MARL.Sockets.parent import Parent
 from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
+from MARL.Nets.CartPoleNet import CartPoleNet
 
 import argparse
 
@@ -30,7 +31,7 @@ ADDRESSES = args.ipaddress
 
 def start_parent():
     for address in ADDRESSES:
-        s = Parent(child_address=address, port=PORT, network_blueprint=ToyNet)
+        s = Parent(child_address=address, port=PORT, network_blueprint=CartPoleNet)
         s.run()
 
 if __name__ == '__main__':

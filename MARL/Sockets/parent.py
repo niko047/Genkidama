@@ -21,7 +21,7 @@ class Parent(GeneralSocket):
         super().__init__(port=port)
 
         self.address = child_address
-        self.neural_net = network_blueprint()
+        self.neural_net = network_blueprint(s_dim=4, a_dim=2)
 
 
     def parent_init(self, address, port):
@@ -86,7 +86,7 @@ class Parent(GeneralSocket):
                 break
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.3)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=1)
 
             print("Implemented, going forward")
 

@@ -1,6 +1,7 @@
 from MARL.Sockets.child import Client
 from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
+from MARL.Nets.CartPoleNet import CartPoleNet
 from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
 import argparse
@@ -24,7 +25,7 @@ PORT = args.port
 ADDRESS = args.ipaddress
 
 # TODO - Set up a different environment for these ones
-neural_net = ToyNet
+neural_net = CartPoleNet
 gym_rl_env_str = "CartPole-v1"
 
 # Initialize environment just to retrieve informations and then close it
