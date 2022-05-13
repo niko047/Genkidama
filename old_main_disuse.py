@@ -32,6 +32,7 @@ env = gym.make('CartPole-v1')
 # TODO 1. Fix the replay buffer to accept (state, action, reward) and not anymore only X and Y
 # DONE, now the sampling returns the following -> s, a, r = buff.random_sample_batch()
 # TODO 2. Set up the environment and connect it at every step of the process
+# DONE
 # TODO 3. Set up the mechanism of going back to actualize the rewards BEFORE storing them in the buffer
 # DONE, now every 5 iterations rewards are actualized and stored in batches inside the shared buffer
 # TODO 4 (?). Implement a buffer that is emptied when a row is smapled (? would take away efficiency in parallel access)
@@ -39,8 +40,6 @@ env = gym.make('CartPole-v1')
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = CartPoleNet(s_dim=4, a_dim=2)
-
-    opt = SGD(loc_net.parameters(), lr=1e-4, momentum=0.9)
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=cpu_id,
@@ -135,12 +134,17 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 # Performs calculation of the backward pass
                 loss.backward()
                 # Performs step of the optimizer
+                # opt.step()
+
+                for lp, gp in zip(loc_net.parameters(), glob_net.parameters()):
+                    gp._grad = lp.grad
                 opt.step()
 
-
+            if (j + 1) % 15 == 0:
+                loc_net.load_state_dict(glob_net.state_dict())
                 print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {b.cpu_id} is: {loss}')
 
-            if (j + 1) % 30 == 0:
+            if (j + 1) % 30 == 0 and False:
                 # Get the current flat weights of the local net and global one
                 flat_orch_params = parameters_to_vector(glob_net.parameters())
                 flat_core_params = parameters_to_vector(loc_net.parameters())
@@ -173,6 +177,7 @@ if __name__ == '__main__':
     glob_net.share_memory()
 
     # opt = SharedAdam(glob_net.parameters(), lr=1e-3, betas=(0.92, 0.999))  # global optimizer
+    opt = SGD(glob_net.parameters(), lr=1e-4, momentum=0.9)
 
     # Queue used to store the history of rewards while training
     res_queue = mp.Queue()
@@ -186,7 +191,7 @@ if __name__ == '__main__':
     # Creates a starting semaphor
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
-    procs = [mp.Process(target=train_model, args=(glob_net, None, buffer, i, semaphor, res_queue)) for i in
+    procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, res_queue)) for i in
              range(NUM_CPUS)]
 
     [p.start() for p in procs]

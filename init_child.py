@@ -42,7 +42,7 @@ shared_opt_kwargs = {
 }
 
 batch_size = 5
-num_iters = 5
+num_iters = 20
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%

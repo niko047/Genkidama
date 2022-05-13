@@ -53,8 +53,7 @@ class CoresOrchestrator(object):
 
         self.gym_rl_env_str = gym_rl_env_str
 
-        self.shared_optimizer = shared_optimizer
-        self.shared_optimizer_kwargs = shared_optimizer_kwargs
+        self.shared_optimizer = shared_optimizer(self.orchestrator_neural_net.parameters(), **shared_optimizer_kwargs)
 
         self.len_state = len_state
         self.len_actions = len_actions
@@ -84,6 +83,7 @@ class CoresOrchestrator(object):
         cores_waiting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
         ending_semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
+
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
 
@@ -96,7 +96,6 @@ class CoresOrchestrator(object):
             cores_waiting_semaphor=cores_waiting_semaphor,
             ending_semaphor=ending_semaphor,
             optimizer=self.shared_optimizer,
-            shared_optimizer_kwargs=self.shared_optimizer_kwargs,
             buffer=self.replay_buffer,
             cpu_id=cpu_id,
             len_state=self.len_state,

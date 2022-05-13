@@ -25,7 +25,6 @@ class SingleCoreProcess(mp.Process):
                  cores_waiting_semaphor,
                  ending_semaphor,
                  optimizer,
-                 shared_optimizer_kwargs,
                  buffer,
                  cpu_id,
                  len_state,
@@ -46,7 +45,7 @@ class SingleCoreProcess(mp.Process):
         self.single_core_neural_net = single_core_neural_net()
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
 
-        self.rl_env = gym.make(gym_rl_env_str)
+        self.env = gym.make(gym_rl_env_str)
         # TODO - Define what has to be saved in the buffer
         # (*states, *actions, *actualized_rewards)
         self.len_state = len_state
@@ -56,7 +55,7 @@ class SingleCoreProcess(mp.Process):
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
-        self.optimizer = optimizer(self.single_core_neural_net.parameters(), **shared_optimizer_kwargs)
+        self.optimizer = optimizer
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -84,6 +83,8 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
+        self.GAMMA = .9 # TODO - Change this and make it a parameter
+
     def run(self):
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
@@ -103,23 +104,49 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
-            # print(f"Implementing the parameters received to the local core net")
-            # self.single_core_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
+
+
+        # Sets up a temporary buffer
+        temporary_buffer = []
 
         for i in range(self.num_episodes):
+            # Resets the environment
+            state = self.env.reset()
+
             # Generate training data and update buffer
-            # TODO - Reset the environemnt here, since another episode is about to begin
             for j in range(self.num_steps):
                 if not self.is_designated_core:
                     # TODO - Change it with an interaction with the environment
                     # Generates some data according to the data generative mechanism
-                    tensor_tuple = Manager.data_generative_mechanism()
+                    # tensor_tuple = Manager.data_generative_mechanism()
+
+                    # Transforms the numpy array state into a tensor object of float32
+                    state_tensor = torch.Tensor(state).to(torch.float32)
+
+                    # Choose an action using the network, using the current state as input
+                    action_chosen = self.single_core_neural_net.choose_action(state_tensor)
+
+                    # Prepares a list containing all the objects above
+                    tensor_tuple = [*state, action_chosen]
+
+                    # Note that this state is the next one observed, it will be used in the next iteration
+                    state, reward, done, _ = self.env.step(action_chosen)
+                    if done: reward = -1
+
+                    # Adds the reward experienced to the current episode reward
+                    # cum_reward += reward
+
+                    # Adds the reward and a placeholder for the discounted reward to be calculated
+                    tensor_tuple.append(reward)
+
+                    # Appends (state, action, reward, reward_observed) tensor object
+                    temporary_buffer.append(torch.Tensor(tensor_tuple))
 
                     # Records the interaction inside the shared Tensor buffer
-                    self.b.record_interaction(tensor_tuple)
+                    # self.b.record_interaction(tensor_tuple)
 
                     # Every once in a while, define better this condition
-                    if (j + 1) % 5 == 0:  # todo 5 gradients step for eGSD and change it to be configurable
+                    if (j + 1) % 5 == 0:
                         # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                         if i == 0:
                             # Do this only for the first absolute run
@@ -127,43 +154,58 @@ class SingleCoreProcess(mp.Process):
                             while not torch.all(self.starting_semaphor[1:]):
                                 pass
 
-                        # Random samples a batch
-                        sampled_batch = self.b.random_sample_batch()
+                        # Reverses the temporal order of tuples, because of ease in discounting rewards
+                        temporary_buffer.reverse()
+                        if done:
+                            R = 0
+                        else:
+                            _, output = self.single_core_neural_net.forward(temporary_buffer[-1][:self.len_state])
+                            # Output in this case is the estimation of the value coming from the state
+                            R = output.item()
 
-                        # Forward pass of the neural net, until the output columns, in this case last one
-                        loc_output = self.single_core_neural_net.forward(sampled_batch[:, :-1])
+                        for idx, interaction in enumerate(temporary_buffer):
+                            # Take the true experienced reward from that session and the action taken in that step
+                            r = interaction[-1]
+                            a = interaction[-2]
 
-                        # Calculates the loss between target and predict
-                        target = torch.Tensor(sampled_batch[:, -1]).reshape(-1, 1)
-                        loss = self.single_core_neural_net.loss(loc_output, target)
+                            R = r + self.GAMMA * R
 
-                        # Averages the loss if using batches, else only the single value
-                        self.res_queue.put(loss.item())
+                            # Append this tuple to the memory buffer, with the discounted reward
+                            self.b.record_interaction(torch.Tensor([*interaction[:self.len_state], a, R]) \
+                                                 .to(torch.float32))
 
-                        # Zeroes the gradients out
-                        self.optimizer.zero_grad()
+                        temporary_buffer = []
 
-                        # Performs calculation of the gradients
-                        loss.backward()
+                        if (j + 1) % 5 == 0:
+                            # Here update the local network
 
-                        # Performs backpropagation with the gradients computed
-                        self.optimizer.step()
+                            # Random samples a batch
+                            state_samples, action_samples, rewards_samples = self.b.random_sample_batch()
 
-                        if (j + 1) % 25 == 0:
-                            # Get the current flat weights of the local net and global one
-                            flat_orch_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-                            flat_core_params = parameters_to_vector(self.single_core_neural_net.parameters())
+                            # Calculates the loss between target and predict
+                            loss = self.single_core_neural_net.loss_func(
+                                s=state_samples,
+                                a=action_samples,
+                                v_t=rewards_samples
+                            )
 
-                            # Compute the new weighted params
-                            new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
-                                                                                  p2=flat_core_params,
-                                                                                  alpha=.3)  # TODO - Change it to a param
+                            # Zeroes the gradients out
+                            self.opt.zero_grad()
+                            # Performs calculation of the backward pass
+                            loss.backward()
+                            # Performs step of the optimizer
+                            # opt.step()
 
-                            # Update the parameters of the orchestrator with the new ones
-                            vector_to_parameters(new_orch_params, self.cores_orchestrator_neural_net.parameters())
+                            for lp, gp in zip(
+                                    self.single_core_neural_net.parameters(),
+                                    self.cores_orchestrator_neural_net.parameters()
+                            ):
+                                gp._grad = lp.grad
+                            self.opt.step()
 
+                        if (j + 1) % 15 == 0:
                             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-                        print(f'[CORE {self.cpu_id}] EPISODE {i} STEP {j + 1} -> Loss is: {loss}')
+                            print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {b.cpu_id} is: {loss}')
 
             # They're sleeping now, perform updates
             if self.is_designated_core:
