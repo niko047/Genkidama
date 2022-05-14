@@ -47,12 +47,14 @@ num_iters = 20
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_steps = 50
 num_episodes = 200
+num_steps = 500
+
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function
 alpha = 1
+gamma=.9
 
 
 def start_child():
@@ -70,7 +72,8 @@ def start_child():
         sample_from_shared_memory=sample_from_shared_memory,
         cpu_capacity=cpu_capacity,
         num_steps=num_steps,
-        num_episodes=num_episodes
+        num_episodes=num_episodes,
+        gamma=gamma
     )
     c = Client(address=ADDRESS, port=PORT, cores_orchestrator=cores_orchestrator)
     c.start_worker()

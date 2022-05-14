@@ -28,7 +28,8 @@ class CoresOrchestrator(object):
                  sample_from_shared_memory,
                  cpu_capacity,
                  num_steps,
-                 num_episodes):
+                 num_episodes,
+                 gamma):
         """
         :param neural_net: Blueprint of the neural net to be used
         :param shared_optimizer: Blueprint of the shared optimizer to be used
@@ -73,6 +74,7 @@ class CoresOrchestrator(object):
 
         self.num_steps = num_steps
         self.num_episodes = num_episodes
+        self.gamma = gamma
 
     def run_procs(self, conn, addr):
 
@@ -106,7 +108,8 @@ class CoresOrchestrator(object):
             num_episodes=self.num_episodes,
             num_steps=self.num_steps,
             socket_connection=conn,
-            address=addr
+            address=addr,
+            gamma=self.gamma
         ) for cpu_id in
             range(self.n_available_cores)]
 

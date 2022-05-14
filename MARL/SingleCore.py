@@ -2,6 +2,7 @@ import torch.multiprocessing as mp
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Sockets.child import Client
+from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import gym
@@ -11,7 +12,9 @@ import gym
 # TODO 1. Fix the replay buffer to accept (state, action, reward) and not anymore only X and Y
 # DONE, now the sampling returns the following -> s, a, r = buff.random_sample_batch()
 # TODO 2. Set up the environment and connect it at every step of the process
+# DONE
 # TODO 3. Set up the mechanism of going back to actualize the rewards BEFORE storing them in the buffer
+# DONE
 # TODO 4 (?). Implement a buffer that is emptied when a row is smapled (? would take away efficiency in parallel access)
 
 class SingleCoreProcess(mp.Process):
@@ -37,7 +40,8 @@ class SingleCoreProcess(mp.Process):
                  num_episodes,
                  num_steps,
                  socket_connection,
-                 address
+                 address,
+                 gamma
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net(s_dim=4, a_dim=2)
@@ -79,7 +83,11 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
-        self.GAMMA = .9 # TODO - Change this and make it a parameter
+        self.GAMMA = gamma # TODO - Change this and make it a parameter
+        self.actor_critic = ActorCritic(
+            env=self.env,
+            neural_net=self.single_core_neural_net
+        )
 
     def run(self):
         if self.is_designated_core:
@@ -100,8 +108,6 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
-
-
         # Sets up a temporary buffer
         temporary_buffer = []
 
@@ -111,10 +117,10 @@ class SingleCoreProcess(mp.Process):
 
             # Generate training data and update buffer
             for j in range(self.num_steps):
+
                 if not self.is_designated_core:
-                    # TODO - Change it with an interaction with the environment
-                    # Generates some data according to the data generative mechanism
-                    # tensor_tuple = Manager.data_generative_mechanism()
+                    # Chooses an action and takes it, modifies inplace the temporary buffer
+                    # done = self.actor_critic.agent_step(state=state, temporary_buffer=temporary_buffer)
 
                     # Transforms the numpy array state into a tensor object of float32
                     state_tensor = torch.Tensor(state).to(torch.float32)
@@ -137,9 +143,6 @@ class SingleCoreProcess(mp.Process):
 
                     # Appends (state, action, reward, reward_observed) tensor object
                     temporary_buffer.append(torch.Tensor(tensor_tuple))
-
-                    # Records the interaction inside the shared Tensor buffer
-                    # self.b.record_interaction(tensor_tuple)
 
                     # Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
@@ -186,22 +189,25 @@ class SingleCoreProcess(mp.Process):
                             )
 
                             # Zeroes the gradients out
-                            self.opt.zero_grad()
+                            self.optimizer.zero_grad()
                             # Performs calculation of the backward pass
                             loss.backward()
                             # Performs step of the optimizer
-                            # opt.step()
+                            # optimizer.step()
 
                             for lp, gp in zip(
                                     self.single_core_neural_net.parameters(),
                                     self.cores_orchestrator_neural_net.parameters()
                             ):
                                 gp._grad = lp.grad
-                            self.opt.step()
+                            self.optimizer.step()
 
                         if (j + 1) % 15 == 0:
                             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-                            print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {b.cpu_id} is: {loss}')
+                            print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.b.cpu_id} is: {loss}')
+
+                        if done:
+                            break
 
             # They're sleeping now, perform updates
             if self.is_designated_core:
