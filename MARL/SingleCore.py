@@ -1,21 +1,13 @@
 import torch.multiprocessing as mp
 from MARL.ReplayBuffer.buffer import ReplayBuffers
-from MARL.Manager.manager import Manager
 from MARL.Sockets.child import Client
 from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import gym
 
+# TODO - Important, optimize the storage of information and the handling of temporary buffers, now it is inefficient
+# TODO - Read papers on stochastic weight averaging
 
-# TODO - New steps to be carried out:
-# TODO 1. Fix the replay buffer to accept (state, action, reward) and not anymore only X and Y
-# DONE, now the sampling returns the following -> s, a, r = buff.random_sample_batch()
-# TODO 2. Set up the environment and connect it at every step of the process
-# DONE
-# TODO 3. Set up the mechanism of going back to actualize the rewards BEFORE storing them in the buffer
-# DONE
-# TODO 4 (?). Implement a buffer that is emptied when a row is smapled (? would take away efficiency in parallel access)
 
 class SingleCoreProcess(mp.Process):
     """Class defining the behavior of each process running in each CPU core in the machine"""
@@ -83,11 +75,7 @@ class SingleCoreProcess(mp.Process):
         self.address = address
         self.is_designated_core = True if not self.cpu_id else False
 
-        self.GAMMA = gamma # TODO - Change this and make it a parameter
-        self.actor_critic = ActorCritic(
-            env=self.env,
-            neural_net=self.single_core_neural_net
-        )
+        self.gamma = gamma
 
     def run(self):
         if self.is_designated_core:
@@ -120,29 +108,12 @@ class SingleCoreProcess(mp.Process):
 
                 if not self.is_designated_core:
                     # Chooses an action and takes it, modifies inplace the temporary buffer
-                    # done = self.actor_critic.agent_step(state=state, temporary_buffer=temporary_buffer)
-
-                    # Transforms the numpy array state into a tensor object of float32
-                    state_tensor = torch.Tensor(state).to(torch.float32)
-
-                    # Choose an action using the network, using the current state as input
-                    action_chosen = self.single_core_neural_net.choose_action(state_tensor)
-
-                    # Prepares a list containing all the objects above
-                    tensor_tuple = [*state, action_chosen]
-
-                    # Note that this state is the next one observed, it will be used in the next iteration
-                    state, reward, done, _ = self.env.step(action_chosen)
-                    if done: reward = -1
-
-                    # Adds the reward experienced to the current episode reward
-                    # cum_reward += reward
-
-                    # Adds the reward and a placeholder for the discounted reward to be calculated
-                    tensor_tuple.append(reward)
-
-                    # Appends (state, action, reward, reward_observed) tensor object
-                    temporary_buffer.append(torch.Tensor(tensor_tuple))
+                    state, reward, done = ActorCritic.agent_step(
+                        neural_net=self.single_core_neural_net,
+                        env=self.env,
+                        state=state,
+                        temporary_buffer=temporary_buffer
+                    )
 
                     # Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
@@ -153,25 +124,14 @@ class SingleCoreProcess(mp.Process):
                             while not torch.all(self.starting_semaphor[1:]):
                                 pass
 
-                        # Reverses the temporal order of tuples, because of ease in discounting rewards
-                        temporary_buffer.reverse()
-                        if done:
-                            R = 0
-                        else:
-                            _, output = self.single_core_neural_net.forward(temporary_buffer[-1][:self.len_state])
-                            # Output in this case is the estimation of the value coming from the state
-                            R = output.item()
-
-                        for idx, interaction in enumerate(temporary_buffer):
-                            # Take the true experienced reward from that session and the action taken in that step
-                            r = interaction[-1]
-                            a = interaction[-2]
-
-                            R = r + self.GAMMA * R
-
-                            # Append this tuple to the memory buffer, with the discounted reward
-                            self.b.record_interaction(torch.Tensor([*interaction[:self.len_state], a, R]) \
-                                                 .to(torch.float32))
+                        ActorCritic.discount_rewards(
+                            neural_net=self.single_core_neural_net,
+                            shared_memory_buffer=self.b,
+                            temporary_buffer=temporary_buffer,
+                            len_state=self.len_state,
+                            gamma=self.gamma,
+                            done=done
+                        )
 
                         temporary_buffer = []
 

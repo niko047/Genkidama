@@ -13,6 +13,8 @@ Sketch of the algorithm:
 import socket
 from .general_socket import GeneralSocket
 import threading
+import gym
+import torch
 
 
 class Parent(GeneralSocket):
@@ -22,6 +24,11 @@ class Parent(GeneralSocket):
 
         self.address = child_address
         self.neural_net = network_blueprint(s_dim=4, a_dim=2)
+
+        self.lock = threading.Lock()
+        self.rewards = []
+
+        self.env = gym.make("CartPole-v1")
 
 
     def parent_init(self, address, port):
@@ -45,7 +52,7 @@ class Parent(GeneralSocket):
             handshake_msg += parent.recv(len_msg_bytes)
         return True
 
-    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
+    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes, lock, rewards):
         """Handles what's up until the connection is alive:
         - Handshake with the parent
         - While stopping condition is met
@@ -88,12 +95,16 @@ class Parent(GeneralSocket):
             # Upload the new weights to the network
             self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=1)
 
-            print("Implemented, going forward")
+            print("Playing an episode of the environment")
+
+            reward = self.run_episode()
+            with lock:
+                rewards.append(reward)
 
             # Simple count of the number of interactions
             interaction_count += 1
 
-    def handle_client(self):
+    def handle_client(self, lock, rewards):
         """Handles the worker, all the functionality is inside here"""
         self.parent_init(address=self.address, port=self.port)
 
@@ -102,11 +113,30 @@ class Parent(GeneralSocket):
             len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
 
             # Interaction has started here, all the talking is done inside this function
-            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes)
+            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes, lock, rewards)
 
             # Interaction has been truncated, close connection
             print(f'[PARENT] Correctly closing parent')
             parent.close()
 
     def run(self):
-        threading.Thread(target=self.handle_client, args=()).start()
+        t = threading.Thread(target=self.handle_client, args=(self.lock, self.rewards))
+        t.start()
+        t.join()
+        print(self.rewards)
+
+
+    def run_episode(self):
+        state = self.env.reset()
+        done = False
+        reward = 0
+        while not done:
+            state_tensor = torch.Tensor(state).to(torch.float32)
+
+            # Choose an action using the network, using the current state as input
+            action_chosen = self.neural_net.choose_action(state_tensor)
+
+            state, reward, done, _ = self.env.step(action_chosen)
+            reward += reward if not done else -1
+
+        return reward
