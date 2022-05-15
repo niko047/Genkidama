@@ -28,7 +28,6 @@ class Parent(GeneralSocket):
         self.lock = threading.Lock()
         self.rewards = []
 
-        self.env = gym.make("CartPole-v1")
 
 
     def parent_init(self, address, port):
@@ -127,7 +126,8 @@ class Parent(GeneralSocket):
 
 
     def run_episode(self):
-        state = self.env.reset()
+        env = gym.make("CartPole-v1")
+        state = env.reset()
         done = False
         reward = 0
         while not done:
@@ -136,7 +136,7 @@ class Parent(GeneralSocket):
             # Choose an action using the network, using the current state as input
             action_chosen = self.neural_net.choose_action(state_tensor)
 
-            state, reward, done, _ = self.env.step(action_chosen)
-            reward += reward if not done else -1
+            state, r, done, _ = env.step(action_chosen)
+            reward += r if not done else -1
 
         return reward
