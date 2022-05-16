@@ -47,7 +47,7 @@ num_iters = 20
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 200
+num_episodes = 600
 num_steps = 500
 
 

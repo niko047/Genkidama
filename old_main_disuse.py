@@ -9,6 +9,7 @@ from torch.optim import SGD
 from MARL.Nets.neural_net import ToyNet
 from MARL.Nets.CartPoleNet import CartPoleNet
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+import matplotlib.pyplot as plt
 
 mp.set_start_method('spawn', force=True)
 
@@ -18,7 +19,7 @@ len_reward = 2
 
 LEN_ITERATIONS: int = 20
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 1000
+NUM_EPISODES: int = 600
 NUM_STEPS: int = 300
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
@@ -52,6 +53,8 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                       len_state=len_state,
                       len_action=1,
                       len_reward=len_reward)
+
+    rewards_list = []
 
     for i in range(NUM_EPISODES):
 
@@ -142,7 +145,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
 
             if (j + 1) % 15 == 0:
                 loc_net.load_state_dict(glob_net.state_dict())
-                print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {b.cpu_id} is: {loss}')
+                print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
 
             if (j + 1) % 30 == 0 and False:
                 # Get the current flat weights of the local net and global one
@@ -164,10 +167,11 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 vector_to_parameters(new_core_params, glob_net.parameters())
 
             if done or j == NUM_STEPS - 1:
+                rewards_list.append(cum_reward)
                 break
 
-        if cpu_id == 0:
-            res_queue.put(cum_reward)
+    plt.plot(range(NUM_EPISODES), rewards_list)
+    plt.waitforbuttonpress()
 
     res_queue.put(None)
 
@@ -209,7 +213,7 @@ if __name__ == '__main__':
 
     # Code for plotting the rewards
 
-    import matplotlib.pyplot as plt
+
 
     torch.save(glob_net, 'cart_pole_model.pt')
 
