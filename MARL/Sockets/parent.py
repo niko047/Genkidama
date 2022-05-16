@@ -96,9 +96,9 @@ class Parent(GeneralSocket):
 
             print("Playing an episode of the environment")
 
-            reward = self.run_episode()
-            with lock:
-                rewards.append(reward)
+            # reward = self.run_episode()
+            # with lock:
+            #     rewards.append(reward)
 
             # Simple count of the number of interactions
             interaction_count += 1
@@ -122,7 +122,7 @@ class Parent(GeneralSocket):
         t = threading.Thread(target=self.handle_client, args=(self.lock, self.rewards))
         t.start()
         t.join()
-        print(self.rewards)
+        # print(self.rewards)
 
 
     def run_episode(self):

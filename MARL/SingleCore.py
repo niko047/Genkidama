@@ -4,6 +4,7 @@ from MARL.Sockets.child import Client
 from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
 import gym
+import matplotlib.pyplot as plt
 
 # TODO - Important, optimize the storage of information and the handling of temporary buffers, now it is inefficient
 # TODO - Read papers on stochastic weight averaging
@@ -77,6 +78,8 @@ class SingleCoreProcess(mp.Process):
 
         self.gamma = gamma
 
+        self.results = []
+
     def run(self):
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
@@ -102,6 +105,7 @@ class SingleCoreProcess(mp.Process):
         for i in range(self.num_episodes):
             # Resets the environment
             state = self.env.reset()
+            ep_reward = 0
 
             # Generate training data and update buffer
             for j in range(self.num_steps):
@@ -114,6 +118,7 @@ class SingleCoreProcess(mp.Process):
                         state=state,
                         temporary_buffer=temporary_buffer
                     )
+                    ep_reward += reward
 
                     # Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
@@ -164,10 +169,12 @@ class SingleCoreProcess(mp.Process):
 
                         if (j + 1) % 15 == 0:
                             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-                            print(f'EPISODE {i} STEP {j + 1} -> Loss for cpu {self.b.cpu_id} is: {loss}')
+                            print(f'EPISODE {i} STEP {j + 1} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
                         if done:
                             break
+
+            self.results.append(ep_reward)
 
             # They're sleeping now, perform updates
             if self.is_designated_core:
@@ -204,6 +211,10 @@ class SingleCoreProcess(mp.Process):
         # The designated core can then close the connection with the parent
         if self.is_designated_core:
             Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
+
+        # Print here the results of the algorithm
+        plt.plot(range(self.num_episodes), self.results)
+        plt.waitforbuttonpress()
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
