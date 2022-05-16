@@ -23,7 +23,7 @@ class Parent(GeneralSocket):
         super().__init__(port=port)
 
         self.address = child_address
-        self.neural_net = network_blueprint(s_dim=4, a_dim=2)
+        self.neural_net = network_blueprint
 
         self.rewards = []
 
@@ -102,9 +102,9 @@ class Parent(GeneralSocket):
             # Simple count of the number of interactions
             interaction_count += 1
 
-    def handle_client(self, address, port):
+    def handle_client(self):
         """Handles the worker, all the functionality is inside here"""
-        self.parent_init(address=address, port=port)
+        self.parent_init(address=self.address, port=self.port)
 
         with self.parent as parent:
             # Gets some starting information to initialize the connection
@@ -117,10 +117,9 @@ class Parent(GeneralSocket):
             print(f'[PARENT] Correctly closing parent')
             parent.close()
 
-    def run(self, address, port):
-        t = threading.Thread(target=self.handle_client, args=(address, port))
+    def run(self):
+        t = threading.Thread(target=self.handle_client, args=())
         t.start()
-        t.join()
         # print(self.rewards)
 
 

@@ -29,11 +29,12 @@ PORT = args.port
 ADDRESSES = args.ipaddress
 print(f'ADDRESSES ARE {ADDRESSES}')
 
-
 def start_parent():
-    s = Parent(child_address=ADDRESSES, port=PORT, network_blueprint=CartPoleNet)
-    for address in ADDRESSES:
-        s.run(address=address, port=PORT)
+    net = CartPoleNet(4, 2)
+    for idx, address in enumerate(ADDRESSES):
+        s = Parent(child_address=address, port=PORT, network_blueprint=net)
+        s.run()
+        print(f'Process number {idx} is running on {address}')
 
 if __name__ == '__main__':
     start = timer()
