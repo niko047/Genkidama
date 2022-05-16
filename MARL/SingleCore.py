@@ -217,8 +217,8 @@ class SingleCoreProcess(mp.Process):
             Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
 
         # Print here the results of the algorithm
-        plt.plot(range(self.num_episodes), self.results)
-        plt.waitforbuttonpress()
+        # plt.plot(range(self.num_episodes), self.results)
+        # plt.waitforbuttonpress()
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
