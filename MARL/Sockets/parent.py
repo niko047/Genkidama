@@ -25,7 +25,6 @@ class Parent(GeneralSocket):
         self.address = child_address
         self.neural_net = network_blueprint(s_dim=4, a_dim=2)
 
-        self.lock = threading.Lock()
         self.rewards = []
 
 
