@@ -27,12 +27,13 @@ args = my_parser.parse_args()
 
 PORT = args.port
 ADDRESSES = args.ipaddress
+print(f'ADDRESSES ARE {ADDRESSES}')
 
 
 def start_parent():
+    s = Parent(child_address=ADDRESSES, port=PORT, network_blueprint=CartPoleNet)
     for address in ADDRESSES:
-        s = Parent(child_address=address, port=PORT, network_blueprint=CartPoleNet)
-        s.run()
+        s.run(address=address, port=PORT)
 
 if __name__ == '__main__':
     start = timer()

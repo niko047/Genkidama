@@ -51,7 +51,7 @@ class Parent(GeneralSocket):
             handshake_msg += parent.recv(len_msg_bytes)
         return True
 
-    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes, lock, rewards):
+    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
         """Handles what's up until the connection is alive:
         - Handshake with the parent
         - While stopping condition is met
@@ -103,23 +103,23 @@ class Parent(GeneralSocket):
             # Simple count of the number of interactions
             interaction_count += 1
 
-    def handle_client(self, lock, rewards):
+    def handle_client(self, address, port):
         """Handles the worker, all the functionality is inside here"""
-        self.parent_init(address=self.address, port=self.port)
+        self.parent_init(address=address, port=port)
 
         with self.parent as parent:
             # Gets some starting information to initialize the connection
             len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
 
             # Interaction has started here, all the talking is done inside this function
-            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes, lock, rewards)
+            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes)
 
             # Interaction has been truncated, close connection
             print(f'[PARENT] Correctly closing parent')
             parent.close()
 
-    def run(self):
-        t = threading.Thread(target=self.handle_client, args=(self.lock, self.rewards))
+    def run(self, address, port):
+        t = threading.Thread(target=self.handle_client, args=(address, port))
         t.start()
         t.join()
         # print(self.rewards)
