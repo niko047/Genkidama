@@ -24,19 +24,9 @@ NUM_STEPS: int = 300
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .9  # TODO - Put gamma inside the functions
+GAMMA = .9
 
 env = gym.make('CartPole-v1')
-
-
-# TODO - New steps to be carried out:
-# TODO 1. Fix the replay buffer to accept (state, action, reward) and not anymore only X and Y
-# DONE, now the sampling returns the following -> s, a, r = buff.random_sample_batch()
-# TODO 2. Set up the environment and connect it at every step of the process
-# DONE
-# TODO 3. Set up the mechanism of going back to actualize the rewards BEFORE storing them in the buffer
-# DONE, now every 5 iterations rewards are actualized and stored in batches inside the shared buffer
-# TODO 4 (?). Implement a buffer that is emptied when a row is smapled (? would take away efficiency in parallel access)
 
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
@@ -63,8 +53,10 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
         state = env.reset()
 
         cum_reward = 0
+        done = False
+        j = 0
 
-        for j in range(NUM_STEPS):
+        while not done:
             # Transforms the numpy array state into a tensor object of float32
             state_tensor = torch.Tensor(state).to(torch.float32)
 
@@ -143,30 +135,13 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                     gp._grad = lp.grad
                 opt.step()
 
-            if (j + 1) % 15 == 0:
+            if (j + 1) % 25 == 0:
                 loc_net.load_state_dict(glob_net.state_dict())
                 print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
 
-            if (j + 1) % 30 == 0 and False:
-                # Get the current flat weights of the local net and global one
-                flat_orch_params = parameters_to_vector(glob_net.parameters())
-                flat_core_params = parameters_to_vector(loc_net.parameters())
+            j += 1
 
-                # Compute the new weighted params
-                new_orch_params = Manager.weighted_avg_net_parameters(p1=flat_orch_params,
-                                                                      p2=flat_core_params,
-                                                                      alpha=.6)  # TODO - Change it to a param
-
-                # Update the parameters of the orchestrator with the new ones
-                vector_to_parameters(new_orch_params, glob_net.parameters())
-
-                new_core_params = Manager.weighted_avg_net_parameters(p1=flat_core_params,
-                                                                      p2=flat_orch_params,
-                                                                      alpha=1)
-
-                vector_to_parameters(new_core_params, glob_net.parameters())
-
-            if done or j == NUM_STEPS - 1:
+            if done :
                 rewards_list.append(cum_reward)
                 break
 

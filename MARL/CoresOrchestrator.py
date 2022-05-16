@@ -29,7 +29,8 @@ class CoresOrchestrator(object):
                  cpu_capacity,
                  num_steps,
                  num_episodes,
-                 gamma):
+                 gamma
+                 ):
         """
         :param neural_net: Blueprint of the neural net to be used
         :param shared_optimizer: Blueprint of the shared optimizer to be used
@@ -51,6 +52,9 @@ class CoresOrchestrator(object):
         # Defines a precise object orchestrator neural net from the blueprint and shares its memory
         self.orchestrator_neural_net = self.neural_net(s_dim=4, a_dim=2) # TODO - Change
         self.orchestrator_neural_net.share_memory()
+
+        self.empty_net_trial = self.neural_net(s_dim=4, a_dim=2)
+        self.empty_net_trial.share_memory()
 
         self.gym_rl_env_str = gym_rl_env_str
 
@@ -109,7 +113,8 @@ class CoresOrchestrator(object):
             num_steps=self.num_steps,
             socket_connection=conn,
             address=addr,
-            gamma=self.gamma
+            gamma=self.gamma,
+            empty_net_trial=self.empty_net_trial
         ) for cpu_id in
             range(self.n_available_cores)]
 

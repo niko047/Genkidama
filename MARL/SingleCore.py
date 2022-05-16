@@ -34,11 +34,13 @@ class SingleCoreProcess(mp.Process):
                  num_steps,
                  socket_connection,
                  address,
-                 gamma
+                 gamma,
+                 empty_net_trial
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net(s_dim=4, a_dim=2)
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
+        self.empty_net_trial = empty_net_trial
 
         self.env = gym.make(gym_rl_env_str)
         # TODO - Define what has to be saved in the buffer
@@ -79,6 +81,7 @@ class SingleCoreProcess(mp.Process):
         self.gamma = gamma
 
         self.results = []
+        self.cum_grads_list = []
 
     def run(self):
         if self.is_designated_core:
@@ -157,17 +160,17 @@ class SingleCoreProcess(mp.Process):
                             self.optimizer.zero_grad()
                             # Performs calculation of the backward pass
                             loss.backward()
-                            # Performs step of the optimizer
-                            # optimizer.step()
 
-                            for lp, gp in zip(
+                            for idx, (lp, gp) in enumerate(zip(
                                     self.single_core_neural_net.parameters(),
                                     self.cores_orchestrator_neural_net.parameters()
-                            ):
+                            )):
+                                # print(f'GRADIENT IS {lp.grad} OF TYPE {type(lp.grad)}')
                                 gp._grad = lp.grad
+                                # Here also copy them to the other episode-wise gradient bucket, without optimizing
                             self.optimizer.step()
 
-                        if (j + 1) % 15 == 0:
+                        if (j + 1) % 30 == 0:
                             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
                             print(f'EPISODE {i} STEP {j + 1} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
@@ -176,6 +179,7 @@ class SingleCoreProcess(mp.Process):
 
             self.results.append(ep_reward)
 
+            # TODO - Uncomment this part
             # They're sleeping now, perform updates
             if self.is_designated_core:
                 while not torch.all(torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
