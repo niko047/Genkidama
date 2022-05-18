@@ -1,3 +1,5 @@
+import torch
+
 from MARL.Sockets.child import Client
 from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
@@ -7,7 +9,7 @@ from torch.optim import SGD
 import argparse
 import gym
 
-my_parser = argparse.ArgumentParser(description='Runs the child socket servers')
+my_parser = argparse.ArgumentParser(description='runs the child socket servers')
 
 my_parser.add_argument('-ip',
                        '--ipaddress',
@@ -43,11 +45,11 @@ shared_opt_kwargs = {
 }
 
 batch_size = 5
-num_iters = 20
+num_iters = 40
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 600
+num_episodes = 200
 num_steps = 500
 
 

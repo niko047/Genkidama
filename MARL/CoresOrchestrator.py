@@ -130,5 +130,6 @@ class CoresOrchestrator(object):
                 break
                 # Join the processes (terminate them)
         [p.join() for p in procs]
+        torch.save(self.orchestrator_neural_net, 'cart_pole_model_a4c.pt')
 
         print(f'Processes have finished running.')

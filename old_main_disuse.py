@@ -17,9 +17,9 @@ len_state = 4
 len_actions = 2
 len_reward = 2
 
-LEN_ITERATIONS: int = 20
+LEN_ITERATIONS: int = 50
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 600
+NUM_EPISODES: int = 500
 NUM_STEPS: int = 300
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
 
 
-    torch.save(glob_net, 'cart_pole_model.pt')
+    torch.save(glob_net, 'cart_pole_model_a3c.pt')
 
     plt.plot(res)
     plt.ylabel('Reward')
