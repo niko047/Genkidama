@@ -27,8 +27,6 @@ class Parent(GeneralSocket):
 
         self.rewards = []
 
-
-
     def parent_init(self, address, port):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.parent.connect((address, port))
