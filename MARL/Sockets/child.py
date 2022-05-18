@@ -30,12 +30,6 @@ class Client(GeneralSocket):
                 conn, addr = worker.accept()
                 self.cores_orchestrator.run_procs(conn, addr)
 
-
-    # TODO - Insert a shitload of static methods to handle the receiving and sending of information
-    # TODO - The methods will be called all inside the single core process
-    # TODO - BASICALLY REPORT THE FUNCTION BELOW IN A SET OF DISJOINT STATIC METHODS THAT CAN BE USED INDIVIDUALLY
-
-
     @staticmethod
     def handshake(conn_to_parent, has_handshaked, len_msg_bytes, start_end_msg):
         while not has_handshaked:
@@ -61,7 +55,7 @@ class Client(GeneralSocket):
             recv_weights_bytes += conn_to_parent.recv(len_msg_bytes)
 
         # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-        neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
+        neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
     @staticmethod
     def prepare_send(conn_to_parent, neural_net):
