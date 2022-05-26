@@ -4,6 +4,7 @@ from MARL.Sockets.child import Client
 from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
 import gym
+from torch.nn.utils import vector_to_parameters, parameters_to_vector
 import matplotlib.pyplot as plt
 
 # TODO - Important, optimize the storage of information and the handling of temporary buffers, now it is inefficient
@@ -102,10 +103,15 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
+            # Implement to the orchestrator network the weights that have just been received
+            self.cores_orchestrator_neural_net.decode_implement_parameters(b=recv_weights_bytes, alpha=1)
+
+
         # Sets up a temporary buffer
         temporary_buffer = []
+        i = 0
 
-        for i in range(self.num_episodes):
+        while True:
             # Resets the environment
             state = self.env.reset()
             ep_reward = 0
@@ -129,8 +135,11 @@ class SingleCoreProcess(mp.Process):
                         if i == 0:
                             # Do this only for the first absolute run
                             self.starting_semaphor[self.cpu_id] = True
-                            while not torch.all(self.starting_semaphor[1:]):
+                            while not torch.all(self.starting_semaphor[:]):
                                 pass
+                            local_vec_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+                            vector_to_parameters(local_vec_params, self.single_core_neural_net.parameters())
+
 
                         ActorCritic.discount_rewards(
                             neural_net=self.single_core_neural_net,
@@ -178,6 +187,8 @@ class SingleCoreProcess(mp.Process):
                             break
 
             self.results.append(ep_reward)
+
+            i += 1
 
             # TODO - Uncomment this part
             # They're sleeping now, perform updates
