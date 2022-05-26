@@ -109,9 +109,8 @@ class SingleCoreProcess(mp.Process):
 
         # Sets up a temporary buffer
         temporary_buffer = []
-        i = 0
 
-        while True:
+        for i in range(self.num_episodes):
             # Resets the environment
             state = self.env.reset()
             ep_reward = 0
@@ -188,7 +187,6 @@ class SingleCoreProcess(mp.Process):
 
             self.results.append(ep_reward)
 
-            i += 1
 
             # TODO - Uncomment this part
             # They're sleeping now, perform updates
