@@ -104,7 +104,7 @@ class SingleCoreProcess(mp.Process):
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
             # Implement to the orchestrator network the weights that have just been received
-            self.cores_orchestrator_neural_net.decode_implement_parameters(b=recv_weights_bytes, alpha=1)
+            # self.cores_orchestrator_neural_net.decode_implement_parameters(b=recv_weights_bytes, alpha=1)
 
 
         # Sets up a temporary buffer
@@ -137,8 +137,8 @@ class SingleCoreProcess(mp.Process):
                             self.starting_semaphor[self.cpu_id] = True
                             while not torch.all(self.starting_semaphor[:]):
                                 pass
-                            local_vec_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-                            vector_to_parameters(local_vec_params, self.single_core_neural_net.parameters())
+                            # local_vec_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+                            # vector_to_parameters(local_vec_params, self.single_core_neural_net.parameters())
 
 
                         ActorCritic.discount_rewards(
