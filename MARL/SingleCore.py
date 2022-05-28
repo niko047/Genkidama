@@ -172,7 +172,8 @@ class SingleCoreProcess(mp.Process):
                             self.optimizer.step()
 
                         if (j + 1) % 30 == 0:
-                            self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+                            with torch.no_grad():
+                                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
                             print(f'EPISODE {i} STEP {j + 1} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
                         if done:
@@ -200,7 +201,8 @@ class SingleCoreProcess(mp.Process):
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
-                print(f'LAST WEIGHTS ARE /n{parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                with torch.no_grad():
+                    print(f'LAST WEIGHTS ARE /n{parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
             # Sleeping pill for all cores except the designated one
             else:

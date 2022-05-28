@@ -1,3 +1,4 @@
+import torch
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import torch.nn as nn
 from torch import save as torchsave
@@ -10,7 +11,8 @@ class GeneralNeuralNet(object):
     def encode_parameters(self) -> bytes:
         """Gets the current parameters of the network and encodes them into bytes"""
         buff = io.BytesIO()
-        flattened_params = parameters_to_vector(self.parameters())
+        with torch.no_grad():
+            flattened_params = parameters_to_vector(self.parameters())
         torchsave(flattened_params, buff)
         buff.seek(0)
         r = buff.read()
