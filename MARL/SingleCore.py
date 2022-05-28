@@ -5,6 +5,7 @@ from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
 import gym
 import matplotlib.pyplot as plt
+from torch.nn.utils import parameters_to_vector
 
 # TODO - Important, optimize the storage of information and the handling of temporary buffers, now it is inefficient
 # TODO - Read papers on stochastic weight averaging
@@ -199,6 +200,7 @@ class SingleCoreProcess(mp.Process):
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
+                print(f'LAST WEIGHTS ARE /n{parameters_to_vector()}')
 
             # Sleeping pill for all cores except the designated one
             else:
