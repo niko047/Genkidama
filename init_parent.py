@@ -37,7 +37,7 @@ def start_parent():
         s = Parent(child_address=address, port=PORT, network_blueprint=net)
         s.run()
         print(f'Process number {idx} is running on {address}')
-    torch.save(net, 'cart_pole_model_a4c.pt')
+    # torch.save(net, 'cart_pole_model_a4c.pt')
 
 if __name__ == '__main__':
     start = timer()

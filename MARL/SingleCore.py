@@ -200,7 +200,7 @@ class SingleCoreProcess(mp.Process):
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
-                print(f'LAST WEIGHTS ARE /n{parameters_to_vector()}')
+                print(f'LAST WEIGHTS ARE /n{parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
             # Sleeping pill for all cores except the designated one
             else:
