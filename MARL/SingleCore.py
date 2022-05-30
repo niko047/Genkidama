@@ -184,42 +184,6 @@ class SingleCoreProcess(mp.Process):
                                 )
                                 # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                        if (j + 1) % 50 == 0:
-                            # Update here the local network sending the updates
-                            if self.is_designated_core:
-                                while not torch.all(
-                                        torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
-                                    pass
-
-                                # Send the old data to the global network
-                                Client.prepare_send(
-                                    conn_to_parent=self.socket_connection,
-                                    neural_net=self.cores_orchestrator_neural_net
-                                )
-
-                                # Wait for response and update current
-                                Client.wait_receive_update(
-                                    conn_to_parent=self.socket_connection,
-                                    len_msg_bytes=len_msg_bytes,
-                                    neural_net=self.cores_orchestrator_neural_net)
-
-                                # Wake up the other cpu cores that were sleeping
-                                self.cores_waiting_semaphor[1:] = False
-
-                            # Sleeping pill for all cores except the designated one
-                            else:
-                                self.cores_waiting_semaphor[self.cpu_id] = True
-                                while self.cores_waiting_semaphor[self.cpu_id]:
-                                    pass
-
-                            # Pull parameters from orchestrator to each single node
-                            with torch.no_grad():
-                                orchestrator_params = parameters_to_vector(
-                                    self.cores_orchestrator_neural_net.parameters())
-                                vector_to_parameters(
-                                    orchestrator_params, self.single_core_neural_net.parameters()
-                                )
-
                         if done:
                             break
 
@@ -228,6 +192,40 @@ class SingleCoreProcess(mp.Process):
             i += 1
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
+            # Update here the local network sending the updates
+            if self.is_designated_core:
+                while not torch.all(
+                        torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
+                    pass
+
+                # Send the old data to the global network
+                Client.prepare_send(
+                    conn_to_parent=self.socket_connection,
+                    neural_net=self.cores_orchestrator_neural_net
+                )
+
+                # Wait for response and update current
+                Client.wait_receive_update(
+                    conn_to_parent=self.socket_connection,
+                    len_msg_bytes=len_msg_bytes,
+                    neural_net=self.cores_orchestrator_neural_net)
+
+                # Wake up the other cpu cores that were sleeping
+                self.cores_waiting_semaphor[1:] = False
+
+            # Sleeping pill for all cores except the designated one
+            else:
+                self.cores_waiting_semaphor[self.cpu_id] = True
+                while self.cores_waiting_semaphor[self.cpu_id]:
+                    pass
+
+            # Pull parameters from orchestrator to each single node
+            with torch.no_grad():
+                orchestrator_params = parameters_to_vector(
+                    self.cores_orchestrator_neural_net.parameters())
+                vector_to_parameters(
+                    orchestrator_params, self.single_core_neural_net.parameters()
+                )
             # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         # Writes down that this cpu core has finished its job
