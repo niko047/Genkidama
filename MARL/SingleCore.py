@@ -174,6 +174,8 @@ class SingleCoreProcess(mp.Process):
                                 # Here also copy them to the other episode-wise gradient bucket, without optimizing
                             self.optimizer.step()
 
+                            self.optimizer.zero_grad()
+
                         if (j + 1) % 30 == 0:
                             with torch.no_grad():
                                 self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
@@ -213,7 +215,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             i += 1
-            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
+            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Pull parameters from orchestrator to each single node
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())

@@ -1,5 +1,8 @@
 import socket
 import threading
+
+import torch
+
 from .general_socket import GeneralSocket
 
 
