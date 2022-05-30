@@ -184,9 +184,6 @@ class SingleCoreProcess(mp.Process):
                                 )
                                 # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
-                        if done:
-                            break
-
                         if (j + 1) % 50 == 0:
                             # Update here the local network sending the updates
                             if self.is_designated_core:
@@ -222,6 +219,9 @@ class SingleCoreProcess(mp.Process):
                                 vector_to_parameters(
                                     orchestrator_params, self.single_core_neural_net.parameters()
                                 )
+
+                        if done:
+                            break
 
             self.results.append(ep_reward)
 
