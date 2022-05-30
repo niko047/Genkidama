@@ -107,8 +107,9 @@ class SingleCoreProcess(mp.Process):
 
         # Sets up a temporary buffer
         temporary_buffer = []
-
-        for i in range(self.num_episodes):
+        i = 0
+        #for i in range(self.num_episodes):
+        while True:
             # Resets the environment
             state = self.env.reset()
             ep_reward = 0
@@ -211,6 +212,8 @@ class SingleCoreProcess(mp.Process):
                 self.cores_waiting_semaphor[self.cpu_id] = True
                 while self.cores_waiting_semaphor[self.cpu_id]:
                     pass
+
+            i += 1
 
             # Pull parameters from orchestrator to each single node
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
