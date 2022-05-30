@@ -5,7 +5,7 @@ from MARL.RL_Algorithms.ActorCritic import ActorCritic
 import torch
 import gym
 import matplotlib.pyplot as plt
-from torch.nn.utils import parameters_to_vector
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 torch.set_printoptions(profile="full")
 
@@ -176,9 +176,13 @@ class SingleCoreProcess(mp.Process):
 
                             self.optimizer.zero_grad()
 
-                        if (j + 1) % 30 == 0:
+                        if (j + 1) % 20 == 0:
                             with torch.no_grad():
-                                self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+                                orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+                                vector_to_parameters(
+                                    orchestrator_params, self.single_core_neural_net.parameters()
+                                )
+                                # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
                         if done:
                             break
@@ -205,8 +209,6 @@ class SingleCoreProcess(mp.Process):
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
-                # with torch.no_grad():
-                #     print(f'LAST WEIGHTS ARE \n{parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
             # Sleeping pill for all cores except the designated one
             else:
@@ -233,3 +235,12 @@ class SingleCoreProcess(mp.Process):
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
+
+
+
+"""
+Observations from using the model and adjustments:
+1. Faster CPUs (or the ones that perform worse, by finishing episodes early) update the network many more times
+than the good ones, thus if they all have the same weight, they slow down the process.
+2. Weight the updates based on the overall episode performance
+"""
