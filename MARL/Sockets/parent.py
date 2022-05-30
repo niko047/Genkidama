@@ -15,7 +15,9 @@ from .general_socket import GeneralSocket
 import threading
 import gym
 import torch
+from torch.nn.utils import parameters_to_vector
 
+torch.set_printoptions(profile='full')
 
 class Parent(GeneralSocket):
 
@@ -69,7 +71,7 @@ class Parent(GeneralSocket):
             if not has_handshake_happened:
                 has_handshake_happened = self.check_handshake(parent, start_end_msg, len_msg_bytes)
 
-            print(f'[PARENT] Sending old weights at iteration {interaction_count}')
+            print(f'[PARENT] Sending old weights at iteration {interaction_count} to {self.address}')
 
             # TODO - Here interact with the environment
             # handle_all_cpu_cores
@@ -77,27 +79,20 @@ class Parent(GeneralSocket):
             # Sending a copy of the global net parameters to the child
             parent.send(old_weights_bytes)
 
-            print(f"Weights sent, now waiting to receive the others")
-
-
             # Receiving the new weights coming from the child
             new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,
                                                                 gsocket=parent)
 
-            print(f"Received weights, about to implement them")
+
 
             # If the message received from the child is the one signaling the end, then close the connection
             if new_weights_bytes == start_end_msg:
                 break
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.8)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
 
-            print("Playing an episode of the environment")
-
-            # reward = self.run_episode()
-            # with lock:
-            #     rewards.append(reward)
+            print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1

@@ -177,7 +177,6 @@ class SingleCoreProcess(mp.Process):
                         if (j + 1) % 30 == 0:
                             with torch.no_grad():
                                 self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
-                            print(f'EPISODE {i} STEP {j + 1} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
                         if done:
                             break
@@ -214,6 +213,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             i += 1
+            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Pull parameters from orchestrator to each single node
             self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
