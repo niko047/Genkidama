@@ -1,6 +1,7 @@
 import torch
 import torch.multiprocessing as mp
 import torch.nn.functional as F
+from MARL.Nets.DerksNet import DerksNet
 import gym
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
@@ -10,6 +11,7 @@ from MARL.Nets.neural_net import ToyNet
 from MARL.Nets.CartPoleNet import CartPoleNet
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import matplotlib.pyplot as plt
+from gym_derk.envs import DerkEnv
 
 mp.set_start_method('spawn', force=True)
 
@@ -26,7 +28,7 @@ SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
 GAMMA = .9
 
-env = gym.make('CartPole-v1')
+env = DerkEnv(turbo_mode=True)
 
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
