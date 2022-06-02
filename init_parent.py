@@ -5,7 +5,7 @@ import torch
 from MARL.Sockets.parent import Parent
 from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
-from MARL.Nets.CartPoleNet import CartPoleNet
+from MARL.Nets.SmallNet import CartPoleNet
 
 import argparse
 

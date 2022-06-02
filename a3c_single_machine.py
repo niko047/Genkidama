@@ -7,34 +7,34 @@ from MARL.Manager.manager import Manager
 from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
 from MARL.Nets.neural_net import ToyNet
-from MARL.Nets.CartPoleNet import CartPoleNet
+from MARL.Nets.SmallNet import SmallNet
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import matplotlib.pyplot as plt
 
 mp.set_start_method('spawn', force=True)
 
-len_state = 4
-len_actions = 2
-len_reward = 2
+len_state = 8
+len_actions = 4
+len_reward = 1
 
-LEN_ITERATIONS: int = 50
+LEN_ITERATIONS: int = 20
 NUM_CPUS: int = mp.cpu_count()
 NUM_EPISODES: int = 500
-NUM_STEPS: int = 300
+NUM_STEPS: int = 400
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .9
+GAMMA = .99
 
-env = gym.make('CartPole-v1')
+env = gym.make('LunarLander-v2')
 
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
-    loc_net = CartPoleNet(s_dim=4, a_dim=2)
+    loc_net = SmallNet(s_dim=8, a_dim=4)
 
     b = ReplayBuffers(shared_replay_buffer=buffer,
                       cpu_id=cpu_id,
-                      len_interaction=len_state + 1 + len_reward,
+                      len_interaction=len_state + 1 + 1,
                       batch_size=BATCH_SIZE,  # If increased it's crap
                       num_iters=LEN_ITERATIONS,
                       tot_num_cpus=NUM_CPUS,
@@ -42,7 +42,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                       sample_from_shared_memory=SAMPLE_FROM_SHARED_MEMORY,
                       len_state=len_state,
                       len_action=1,
-                      len_reward=len_reward)
+                      len_reward=1)
 
     rewards_list = []
 
@@ -106,7 +106,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                     R = r + GAMMA * R
 
                     # Append this tuple to the memory buffer, with the discounted reward
-                    b.record_interaction(torch.Tensor([*interaction[:len_state], a, r, R])\
+                    b.record_interaction(torch.Tensor([*interaction[:len_state], a, R])\
                                          .to(torch.float32))
 
                 temporary_buffer = []
@@ -135,9 +135,10 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                     gp._grad = lp.grad
                 opt.step()
 
-            if (j + 1) % 25 == 0:
-                loc_net.load_state_dict(glob_net.state_dict())
-                print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
+            if (j + 1) % 20 == 0:
+                with torch.no_grad():
+                    loc_net.load_state_dict(glob_net.state_dict())
+                    print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
 
             j += 1
 
@@ -152,11 +153,11 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
 
 
 if __name__ == '__main__':
-    glob_net = CartPoleNet(a_dim=2, s_dim=4)
+    glob_net = SmallNet(a_dim=4, s_dim=8)
     glob_net.share_memory()
 
-    # opt = SharedAdam(glob_net.parameters(), lr=1e-3, betas=(0.92, 0.999))  # global optimizer
-    opt = SGD(glob_net.parameters(), lr=1e-4, momentum=0.9)
+    # opt = SharedAdam(glob_net.parameters(), lr=1e-4, betas=(0.92, 0.999))  # global optimizer
+    opt = SGD(glob_net.parameters(), lr= 1e-4, momentum=0.9)
 
     # Queue used to store the history of rewards while training
     res_queue = mp.Queue()
@@ -187,10 +188,7 @@ if __name__ == '__main__':
     [p.join() for p in procs]
 
     # Code for plotting the rewards
-
-
-
-    torch.save(glob_net, 'cart_pole_model_a3c.pt')
+    torch.save(glob_net, 'lunar_lander.pt')
 
     plt.plot(res)
     plt.ylabel('Reward')
