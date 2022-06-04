@@ -11,6 +11,7 @@ class ReplayBuffers(object):
                  tot_num_cpus: int,
                  replacement: bool,
                  sample_from_shared_memory: bool,
+                 time_ordered_sampling: bool,
                  len_state: int,
                  len_action: int,
                  len_reward: int):
@@ -32,6 +33,7 @@ class ReplayBuffers(object):
         self.replacement = replacement
         self.batch_size = batch_size
         self.sample_from_shared_memory = sample_from_shared_memory
+        self.time_ordered_sampling = time_ordered_sampling
 
         self.len_state = len_state
         self.len_action = len_action
@@ -60,14 +62,17 @@ class ReplayBuffers(object):
         if self.is_buffer_full():
             # Uses a First-In First-Out way of rewriting the buffer by resetting index
             self.current_iter_number = 0
-
+        # print(f'Trying to insert at index {self.current_iter_number} the iteration {new_inter}')
+        # print(f'As of now the buffer for this cpu is {self.shared_replay_buffer[self.cpu_id, :, :]}')
         self.shared_replay_buffer[self.cpu_id, self.current_iter_number, :] = new_inter
 
         self.current_iter_number += 1
 
     def is_buffer_full(self) -> bool:
         """Checks if the buffer for current CPU is full"""
-        return True if (self.len_interaction - self.current_iter_number + 1) == 0 else False
+        # print(f'Current length of interaction is {self.len_interaction} should be 5')
+        # print(f'Current iteration number + 1 is {self.current_iter_number + 1}')
+        return True if (self.num_iters - self.current_iter_number) == 0 else False
 
     @staticmethod
     def random_sample_batch_(shared_buffer: torch.Tensor,
@@ -79,7 +84,8 @@ class ReplayBuffers(object):
                              tot_num_cpus: int,
                              batch_size: int,
                              replacement: bool = False,
-                             cpu_id=None) -> torch.Tensor:
+                             time_ordered_sampling=True,
+                             cpu_id=None) :
         """Returns a random sample over the shared CPU buffers, mixing them up"""
         if cpu_id is None:
             reshaped_shared_buffer = torch.reshape(shared_buffer, (num_iters * tot_num_cpus, len_interaction))
@@ -91,20 +97,29 @@ class ReplayBuffers(object):
         # Creates boolean mask to exclude rows that are still zero
         zero_row = torch.zeros(size=(len_interaction,))
         mask = ~(reshaped_shared_buffer == zero_row)[:, 0]
-
         # Masks the array for valid rows
         masked_buffer = reshaped_shared_buffer[mask]
 
-        # Random samples the data
-        if replacement:
-            # Random sample without fear of full of zeros-rows
-            idxs = torch.randint(len(masked_buffer), (batch_size,))
-        else:
-            idxs = torch.randperm(len(masked_buffer))[:batch_size]
+        # Sampling should NOT follow the timestamps of the trajectory recorded
+        if not time_ordered_sampling:
 
-        return masked_buffer[idxs, : len_state],\
-               masked_buffer[idxs, len_state : len_state + len_action],\
-               masked_buffer[idxs, len_state + len_action:]
+            # Random samples the data
+            if replacement:
+                # Random sample without fear of full of zeros-rows
+                idxs = torch.randint(len(masked_buffer), (batch_size,))
+            else:
+                idxs = torch.randperm(len(masked_buffer))[:batch_size]
+
+            return masked_buffer[idxs, : len_state], \
+                   masked_buffer[idxs, len_state: len_state + len_action], \
+                   masked_buffer[idxs, len_state + len_action:]
+
+        # Sampling should follow the timestamps of the trajectory recorded in the buffer, returns whole buffer
+        else:
+            return masked_buffer[:, : len_state], \
+                   masked_buffer[:, len_state: len_state + len_action], \
+                   masked_buffer[:, len_state + len_action:]
+
 
     def random_sample_batch(self) -> torch.Tensor:
         """Random samples a batch from shared buffer to update the network's weights"""
@@ -117,5 +132,6 @@ class ReplayBuffers(object):
                                                  tot_num_cpus=self.tot_num_cpus,
                                                  batch_size=self.batch_size,
                                                  replacement=self.replacement,
+                                                 time_ordered_sampling=self.time_ordered_sampling,
                                                  cpu_id=None if self.sample_from_shared_memory else self.cpu_id)
         return state, action, reward

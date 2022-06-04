@@ -17,9 +17,9 @@ class SmallNet(nn.Module, GeneralNeuralNet):
         self.distribution = torch.distributions.Categorical
 
     def forward(self, x):
-        pi1 = torch.relu(self.pi1(x))
+        pi1 = torch.tanh(self.pi1(x))
         logits = self.pi2(pi1)
-        v1 = torch.relu(self.v1(x))
+        v1 = torch.tanh(self.v1(x))
         values = self.v2(v1)
         return logits, values
 
@@ -33,14 +33,15 @@ class SmallNet(nn.Module, GeneralNeuralNet):
     def loss_func(self, s, a, v_t):
         self.train()
         logits, values = self.forward(s)
-        td = v_t - values
+        # Takes actual values of states (discounted) and does MSE against the estimated ones by the network
+        td = v_t.reshape(-1, 1) - values
         c_loss = td.pow(2)
 
         probs = F.softmax(logits, dim=1)
         m = self.distribution(probs)
         exp_v = m.log_prob(a) * td.detach().squeeze()
         a_loss = -exp_v
-        total_loss = (c_loss + a_loss).mean()
+        total_loss = (c_loss.ravel() + a_loss).mean()
         return total_loss
 
     @staticmethod

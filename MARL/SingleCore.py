@@ -63,6 +63,7 @@ class SingleCoreProcess(mp.Process):
             tot_num_cpus=tot_num_active_cpus,
             replacement=replacement,
             sample_from_shared_memory=sample_from_shared_memory,
+            time_ordered_sampling=True,
             len_state=self.len_state,
             len_action= 1,  # Change in case of a problem with multiple actions necessary
             len_reward= 1  # Change in case of a problem with multiple rewards necessary
