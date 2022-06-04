@@ -13,20 +13,20 @@ import matplotlib.pyplot as plt
 
 mp.set_start_method('spawn', force=True)
 
-len_state = 4  # 8
-len_actions = 2  # 4
+len_state = 8
+len_actions = 4
 len_reward = 1
 
 LEN_ITERATIONS: int = 5
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 1000
-NUM_STEPS: int = 500
+NUM_EPISODES: int = 150
+NUM_STEPS: int = 2000
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .9
+GAMMA = .99
 
-env = gym.make('CartPole-v1')
+env = gym.make('LunarLander-v2')
 
 
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
@@ -70,7 +70,6 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
 
             # Note that this state is the next one observed, it will be used in the next iteration
             state, reward, done, _ = env.step(action_chosen)
-            if done: reward = -1
 
             if not done:
 
@@ -152,7 +151,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 temporary_buffer = torch.zeros(size=(LEN_ITERATIONS, len_state + 2))
                 temporary_buffer_idx = 0
 
-            if (j + 1) % 20 == 0 or done:
+            if (j + 1) % 25 == 0 or done:
                 # Loads the state dict locally after the global optimization step
                 loc_net.load_state_dict(glob_net.state_dict())
                 print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
