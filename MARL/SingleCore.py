@@ -112,21 +112,46 @@ class SingleCoreProcess(mp.Process):
         #for i in range(self.num_episodes):
         while True:
             # Resets the environment
+            #DEC temporary_buffer = torch.zeros(size=(LEN_ITERATIONS, len_state + 2))
             state = self.env.reset()
             ep_reward = 0
-
+            #DEC temporary_buffer_idx = 0
+            done = False
+            temporary_buffer_idx = 0
+            j=0
             # Generate training data and update buffer
-            for j in range(self.num_steps):
+            while not done:
 
                 if not self.is_designated_core:
                     # Chooses an action and takes it, modifies inplace the temporary buffer
-                    state, reward, done = ActorCritic.agent_step(
-                        neural_net=self.single_core_neural_net,
-                        env=self.env,
-                        state=state,
-                        temporary_buffer=temporary_buffer
-                    )
-                    ep_reward += reward
+                    # state, reward, done = ActorCritic.agent_step(
+                    #     neural_net=self.single_core_neural_net,
+                    #     env=self.env,
+                    #     state=state,
+                    #     temporary_buffer=temporary_buffer
+                    # )
+                    # ep_reward += reward
+
+                    # Transforms the numpy array state into a tensor object of float32
+                    state_tensor = torch.Tensor(state).to(torch.float32)
+
+                    # Choose an action using the network, using the current state as input
+                    action_chosen = self.single_core_neural_net.choose_action(state_tensor)
+
+                    # Prepares a list containing all the objects above
+                    tensor_tuple = torch.Tensor([*state, action_chosen, 0])
+
+                    # Note that this state is the next one observed, it will be used in the next iteration
+                    state, reward, done, _ = self.env.step(action_chosen)
+
+                    if not done:
+                        ep_reward += reward
+
+                        tensor_tuple[-1] = reward
+
+                        temporary_buffer[temporary_buffer_idx, :] = tensor_tuple
+
+                        temporary_buffer_idx += 1
 
                     # Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
@@ -137,56 +162,75 @@ class SingleCoreProcess(mp.Process):
                             while not torch.all(self.starting_semaphor[1:]):
                                 pass
 
-                        ActorCritic.discount_rewards(
-                            neural_net=self.single_core_neural_net,
-                            shared_memory_buffer=self.b,
-                            temporary_buffer=temporary_buffer,
-                            len_state=self.len_state,
-                            gamma=self.gamma,
-                            done=done
-                        )
+                        if done:
+                            zero_row = torch.zeros(size=(self.len_state + 2,))
+                            mask = ~(temporary_buffer == zero_row)[:, 0]
+                            # Masks the array for valid rows
+                            temporary_buffer = temporary_buffer[mask]
 
-                        temporary_buffer = []
-
-                        if (j + 1) % 5 == 0:
-                            # Here update the local network
-
-                            # Random samples a batch
-                            state_samples, action_samples, rewards_samples = self.b.random_sample_batch()
-
-                            # Calculates the loss between target and predict
-                            loss = self.single_core_neural_net.loss_func(
-                                s=state_samples,
-                                a=action_samples,
-                                v_t=rewards_samples
-                            )
-
-                            # Zeroes the gradients out
-                            self.optimizer.zero_grad()
-                            # Performs calculation of the backward pass
-                            loss.backward()
-
-                            for idx, (lp, gp) in enumerate(zip(
-                                    self.single_core_neural_net.parameters(),
-                                    self.cores_orchestrator_neural_net.parameters()
-                            )):
-                                # print(f'GRADIENT IS {lp.grad} OF TYPE {type(lp.grad)}')
-                                gp._grad = lp.grad
-                                # Here also copy them to the other episode-wise gradient bucket, without optimizing
-                            self.optimizer.step()
-
-                            self.optimizer.zero_grad()
-
-                        if (j + 1) % 20 == 0:
-                            with torch.no_grad():
-                                orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-                                vector_to_parameters(
-                                    orchestrator_params, self.single_core_neural_net.parameters()
-                                )
-                                # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+                        # ActorCritic.discount_rewards(
+                        #     neural_net=self.single_core_neural_net,
+                        #     shared_memory_buffer=self.b,
+                        #     temporary_buffer=temporary_buffer,
+                        #     len_state=self.len_state,
+                        #     gamma=self.gamma,
+                        #     done=done
+                        # )
+                        temporary_buffer_flipped = torch.flip(temporary_buffer, dims=(0,))
 
                         if done:
-                            break
+                            R = 0
+                        else :
+                            _, output = self.single_core_neural_net.forward(temporary_buffer_flipped[0:self.len_state])
+
+                            R = output.item()
+
+                        for idx, interaction in enumerate(temporary_buffer_flipped):
+                            r = interaction[-1]
+                            a = interaction[-2]
+
+                            R = r + self.gamma * R
+
+                            temporary_buffer_flipped[idx, -1] = R
+                        temporary_buffer = torch.flip(temporary_buffer_flipped, dims=(0,))
+
+                        state_samples = temporary_buffer[:, :self.len_state]
+                        action_samples = temporary_buffer[:, -2]
+                        rewards_samples = temporary_buffer[:, -1]
+
+                        # Calculates the loss between target and predict
+                        loss = self.single_core_neural_net.loss_func(
+                            s=state_samples,
+                            a=action_samples,
+                            v_t=rewards_samples
+                        )
+
+                        # Zeroes the gradients out
+                        self.optimizer.zero_grad()
+                        # Performs calculation of the backward pass
+                        loss.backward()
+
+                        for idx, (lp, gp) in enumerate(zip(
+                                self.single_core_neural_net.parameters(),
+                                self.cores_orchestrator_neural_net.parameters()
+                        )):
+                            # print(f'GRADIENT IS {lp.grad} OF TYPE {type(lp.grad)}')
+                            gp._grad = lp.grad
+                            # Here also copy them to the other episode-wise gradient bucket, without optimizing
+                        self.optimizer.step()
+
+                        self.optimizer.zero_grad()
+
+                    if (j + 1) % 20 == 0:
+                        with torch.no_grad():
+                            orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+                            vector_to_parameters(
+                                orchestrator_params, self.single_core_neural_net.parameters()
+                            )
+                            # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+
+                    if done:
+                        break
 
             self.results.append(ep_reward)
 
