@@ -106,13 +106,11 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
 
-        # Sets up a temporary buffer
-        temporary_buffer = []
         i = 0
         #for i in range(self.num_episodes):
         while True:
             # Resets the environment
-            #DEC temporary_buffer = torch.zeros(size=(LEN_ITERATIONS, len_state + 2))
+            temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
             state = self.env.reset()
             ep_reward = 0
             #DEC temporary_buffer_idx = 0
@@ -204,6 +202,8 @@ class SingleCoreProcess(mp.Process):
                             a=action_samples,
                             v_t=rewards_samples
                         )
+
+                        temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
                         # Zeroes the gradients out
                         self.optimizer.zero_grad()
