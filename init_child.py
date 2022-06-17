@@ -3,7 +3,6 @@ import torch
 from MARL.Sockets.child import Client
 from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
-from MARL.Nets.SmallNet import CartPoleNet
 from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
 import argparse
