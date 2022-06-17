@@ -1,14 +1,10 @@
 import torch
 import torch.multiprocessing as mp
-import torch.nn.functional as F
 import gym
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
-from MARL.Optims.shared_optims import SharedAdam
 from torch.optim import SGD
-from MARL.Nets.neural_net import ToyNet
 from MARL.Nets.SmallNet import SmallNet
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import matplotlib.pyplot as plt
 
 mp.set_start_method('spawn', force=True)

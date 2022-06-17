@@ -1,12 +1,6 @@
-import threading
-
-import torch
-
 from MARL.Sockets.parent import Parent
-from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
-from MARL.Nets.SmallNet import CartPoleNet
-
+from MARL.Nets.SmallNet import SmallNet
 import argparse
 
 
@@ -32,7 +26,7 @@ ADDRESSES = args.ipaddress
 print(f'ADDRESSES ARE {ADDRESSES}')
 
 def start_parent():
-    net = CartPoleNet(4, 2)
+    net = SmallNet(8, 4)
     for idx, address in enumerate(ADDRESSES):
         s = Parent(child_address=address, port=PORT, network_blueprint=net)
         s.run()
