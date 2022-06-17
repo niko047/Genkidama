@@ -41,7 +41,7 @@ class SingleCoreProcess(mp.Process):
                  empty_net_trial
                  ):
         super(SingleCoreProcess, self).__init__()
-        self.single_core_neural_net = single_core_neural_net(s_dim=4, a_dim=2)
+        self.single_core_neural_net = single_core_neural_net(s_dim=8, a_dim=4) # TODO - pass these as params
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
         self.empty_net_trial = empty_net_trial
 
@@ -116,7 +116,7 @@ class SingleCoreProcess(mp.Process):
             #DEC temporary_buffer_idx = 0
             done = False
             temporary_buffer_idx = 0
-            j=0
+            j = 0
             # Generate training data and update buffer
             while not done:
 
@@ -146,6 +146,8 @@ class SingleCoreProcess(mp.Process):
                         ep_reward += reward
 
                         tensor_tuple[-1] = reward
+
+                        # print(f"Trying to access with j {j} \n index {temporary_buffer_idx}\n the memory {temporary_buffer}")
 
                         temporary_buffer[temporary_buffer_idx, :] = tensor_tuple
 
@@ -234,7 +236,7 @@ class SingleCoreProcess(mp.Process):
                     if done:
                         break
 
-                j =+ 1
+                    j += 1
 
             self.results.append(ep_reward)
 

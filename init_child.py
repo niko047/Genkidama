@@ -28,7 +28,7 @@ ADDRESS = args.ipaddress
 
 # TODO - Set up a different environment for these ones
 neural_net = SmallNet
-gym_rl_env_str = "CartPole-v1"
+gym_rl_env_str = "LunarLander-v2"
 
 # Initialize environment just to retrieve informations and then close it
 env = gym.make(gym_rl_env_str)
