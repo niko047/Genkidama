@@ -153,6 +153,8 @@ class SingleCoreProcess(mp.Process):
 
                     # Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
+
+                        temporary_buffer_idx = 0
                         # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                         if i == 0:
                             # Do this only for the first absolute run
@@ -220,7 +222,6 @@ class SingleCoreProcess(mp.Process):
                         self.optimizer.zero_grad()
 
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
-                        temporary_buffer_idx = 0
 
                     if (j + 1) % 20 == 0:
                         with torch.no_grad():
