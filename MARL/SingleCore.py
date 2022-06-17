@@ -179,17 +179,17 @@ class SingleCoreProcess(mp.Process):
                         if done:
                             R = 0
                         else :
-                            _, output = self.single_core_neural_net.forward(temporary_buffer_flipped[0:self.len_state])
+                            _, output = self.single_core_neural_net.forward(temporary_buffer_flipped[0, :self.len_state])
 
                             R = output.item()
 
                         for idx, interaction in enumerate(temporary_buffer_flipped):
                             r = interaction[-1]
-                            a = interaction[-2]
 
                             R = r + self.gamma * R
 
                             temporary_buffer_flipped[idx, -1] = R
+
                         temporary_buffer = torch.flip(temporary_buffer_flipped, dims=(0,))
 
                         state_samples = temporary_buffer[:, :self.len_state]
@@ -202,9 +202,6 @@ class SingleCoreProcess(mp.Process):
                             a=action_samples,
                             v_t=rewards_samples
                         )
-
-                        temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
-                        temporary_buffer_idx = 0
 
                         # Zeroes the gradients out
                         self.optimizer.zero_grad()
@@ -222,6 +219,9 @@ class SingleCoreProcess(mp.Process):
 
                         self.optimizer.zero_grad()
 
+                        temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
+                        temporary_buffer_idx = 0
+
                     if (j + 1) % 20 == 0:
                         with torch.no_grad():
                             orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
@@ -232,6 +232,8 @@ class SingleCoreProcess(mp.Process):
 
                     if done:
                         break
+
+                j =+ 1
 
             self.results.append(ep_reward)
 
