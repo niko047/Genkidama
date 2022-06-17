@@ -204,6 +204,7 @@ class SingleCoreProcess(mp.Process):
                         )
 
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
+                        temporary_buffer_idx = 0
 
                         # Zeroes the gradients out
                         self.optimizer.zero_grad()
