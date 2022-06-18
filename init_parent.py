@@ -26,7 +26,7 @@ ADDRESSES = args.ipaddress
 print(f'ADDRESSES ARE {ADDRESSES}')
 
 def start_parent():
-    net = SmallNet(8, 4)
+    net = SmallNet(s_dim=8, a_dim=4)
     for idx, address in enumerate(ADDRESSES):
         s = Parent(child_address=address, port=PORT, network_blueprint=net)
         s.run()

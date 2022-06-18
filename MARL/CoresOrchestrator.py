@@ -50,10 +50,10 @@ class CoresOrchestrator(object):
         self.neural_net = neural_net
 
         # Defines a precise object orchestrator neural net from the blueprint and shares its memory
-        self.orchestrator_neural_net = self.neural_net(s_dim=4, a_dim=2) # TODO - Change
+        self.orchestrator_neural_net = self.neural_net(s_dim=8, a_dim=4) # TODO - Change
         self.orchestrator_neural_net.share_memory()
 
-        self.empty_net_trial = self.neural_net(s_dim=4, a_dim=2)
+        self.empty_net_trial = self.neural_net(s_dim=8, a_dim=4)
         self.empty_net_trial.share_memory()
 
         self.gym_rl_env_str = gym_rl_env_str
@@ -130,6 +130,6 @@ class CoresOrchestrator(object):
                 break
                 # Join the processes (terminate them)
         [p.join() for p in procs]
-        torch.save(self.orchestrator_neural_net, 'cart_pole_model_a4c.pt')
+        # torch.save(self.orchestrator_neural_net, 'cart_pole_model_a4c.pt')
 
         print(f'Processes have finished running.')
