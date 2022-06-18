@@ -87,7 +87,7 @@ class Parent(GeneralSocket):
             # Upload the new weights to the network
             self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
 
-            print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
+            # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1

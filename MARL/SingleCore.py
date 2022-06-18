@@ -115,13 +115,10 @@ class SingleCoreProcess(mp.Process):
             state = self.env.reset()
             ep_reward = 0
             #DEC temporary_buffer_idx = 0
-            done = False
             temporary_buffer_idx = 0
-            j = 0
             # Generate training data and update buffer
-            while not done:
+            for j in range(self.num_steps):
 
-                print(f'Designated core it at line 124')
                 if not self.is_designated_core:
                     # Chooses an action and takes it, modifies inplace the temporary buffer
                     # state, reward, done = ActorCritic.agent_step(
@@ -238,16 +235,14 @@ class SingleCoreProcess(mp.Process):
                     if done:
                         break
 
-                    j += 1
 
-            self.results.append(ep_reward)
+            if not self.is_designated_core: self.results.append(ep_reward)
 
             i += 1
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
-            print(f'Designated core it at line 246')
+            # print(f'Designated core it at line 246')
             # Update here the local network sending the updates
             if self.is_designated_core:
-                print(f"Designated core is waiting for the others to finish")
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
@@ -265,16 +260,13 @@ class SingleCoreProcess(mp.Process):
                     neural_net=self.cores_orchestrator_neural_net)
 
                 # Wake up the other cpu cores that were sleeping
-                print(f'Designated core about to free the others')
                 self.cores_waiting_semaphor[1:] = False
 
             # Sleeping pill for all cores except the designated one
             else:
-                print(f"CPU {self.cpu_id} started waiting for the others")
                 self.cores_waiting_semaphor[self.cpu_id] = True
                 while self.cores_waiting_semaphor[self.cpu_id]:
                     pass
-                print(f"CPU {self.cpu_id} is waking up")
 
             # Pull parameters from orchestrator to each single node
             with torch.no_grad():
