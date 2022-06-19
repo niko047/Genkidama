@@ -106,6 +106,7 @@ class SingleCoreProcess(mp.Process):
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
             print(f"Designated Core Finished to receive bytes from parent")
+            print(f"STARTING NOW TO MANAGE THE PROCESSES")
 
         i = 0
         #for i in range(self.num_episodes):
