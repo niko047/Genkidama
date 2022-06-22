@@ -1,4 +1,5 @@
 import torch.multiprocessing as mp
+import numpy as np
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Sockets.child import Client
 from MARL.RL_Algorithms.ActorCritic import ActorCritic
@@ -109,6 +110,21 @@ class SingleCoreProcess(mp.Process):
         temporary_buffer_idx = 0
         return temporary_buffer, temporary_buffer_idx, state, ep_reward
 
+    def environment_interaction(self, state):
+        """Interacts with the environment according to the current current core policy (NN)"""
+        # Transforms the numpy array state into a tensor object of float32
+        state_tensor = torch.Tensor(state).to(torch.float32)
+
+        # Choose an action using the network, using the current state as input
+        action_chosen = self.single_core_neural_net.choose_action(state_tensor)
+
+        # Prepares a tensor containing all the objects above
+        tensor_tuple = torch.Tensor(np.array([*state, action_chosen, 0]))
+
+        # Note that this state is the next one observed, it will be used in the next iteration
+        state, reward, done, _ = self.env.step(action_chosen)
+
+        return state, reward, done, tensor_tuple
 
     def run(self):
         # TODO - Put all of this inside a function
@@ -125,35 +141,22 @@ class SingleCoreProcess(mp.Process):
             )
 
             # Wait for weights to be received
-            print(f"Designated Core Receiving bytes from parent")
+            print(f"[CHILD] Designated Core Receiving bytes from parent")
             recv_weights_bytes = b''
             while len(recv_weights_bytes) < len_msg_bytes:
                 recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
-            print(f"Designated Core Finished to receive bytes from parent")
-            print(f"STARTING NOW TO MANAGE THE PROCESSES")
+            print(f"[CHILD] Designated Core Finished to receive bytes from parent")
 
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
-
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
 
             # Generate training data and update buffer
             for j in range(self.num_steps):
 
                 if not self.is_designated_core:
-                    # TODO - Put all of this inside a function
-
-                    # Transforms the numpy array state into a tensor object of float32
-                    state_tensor = torch.Tensor(state).to(torch.float32)
-
-                    # Choose an action using the network, using the current state as input
-                    action_chosen = self.single_core_neural_net.choose_action(state_tensor)
-
-                    # Prepares a list containing all the objects above
-                    tensor_tuple = torch.Tensor([*state, action_chosen, 0])
-
-                    # Note that this state is the next one observed, it will be used in the next iteration
-                    state, reward, done, _ = self.env.step(action_chosen)
+                    # Interacts with the environment and return results
+                    state, reward, done, tensor_tuple = self.environment_interaction(state)
 
                     if not done:
                         ep_reward += reward
