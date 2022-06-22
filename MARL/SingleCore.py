@@ -126,26 +126,35 @@ class SingleCoreProcess(mp.Process):
 
         return state, reward, done, tensor_tuple
 
-    def run(self):
-        # TODO - Put all of this inside a function
-        if self.is_designated_core:
-            old_weights_bytes = self.single_core_neural_net.encode_parameters()
-            len_msg_bytes = len(old_weights_bytes)
-            print(f'Length of weights is {len_msg_bytes}')
-            start_end_msg = b' ' * len_msg_bytes
-            Client.handshake(
-                conn_to_parent=self.socket_connection,
-                has_handshaked=False,
-                len_msg_bytes=len_msg_bytes,
-                start_end_msg=start_end_msg
-            )
+    def designated_core_handshake(self):
+        """Handshakes the parent checking for agreement"""
+        old_weights_bytes = self.single_core_neural_net.encode_parameters()
+        len_msg_bytes = len(old_weights_bytes)
+        self.len_msg_bytes = len_msg_bytes
+        print(f"########## STARTING INITIALIZATION OF NODE, HANDSHAKING ##########")
+        print(f'=> Length of the weights is {len_msg_bytes} bytes.')
+        start_end_msg = b' ' * len_msg_bytes
+        print(f'=> Starting the SYN with ADDRESS: {self.address}')
+        Client.handshake(
+            conn_to_parent=self.socket_connection,
+            has_handshaked=False,
+            len_msg_bytes=len_msg_bytes,
+            start_end_msg=start_end_msg
+        )
+        print(f'=> Ending the SYN with ADDRESS: {self.address}')
+        print(f'=> Starting the ACK with ADDRESS: {self.address}')
+        recv_weights_bytes = b''
+        while len(recv_weights_bytes) < len_msg_bytes:
+            recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
+        print(f'=> Ending the ACK with ADDRESS: {self.address}')
+        print(f"########## INITIALIZATION OF NODE DONE, STARTING COMPUTATIONS ##########")
 
-            # Wait for weights to be received
-            print(f"[CHILD] Designated Core Receiving bytes from parent")
-            recv_weights_bytes = b''
-            while len(recv_weights_bytes) < len_msg_bytes:
-                recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
-            print(f"[CHILD] Designated Core Finished to receive bytes from parent")
+
+
+    def run(self):
+        """Main function, starts the whole process, the underlying algorithm is this function itself"""
+        if self.is_designated_core:
+            self.designated_core_handshake()
 
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
@@ -267,7 +276,7 @@ class SingleCoreProcess(mp.Process):
                 # Wait for response and update current
                 Client.wait_receive_update(
                     conn_to_parent=self.socket_connection,
-                    len_msg_bytes=len_msg_bytes,
+                    len_msg_bytes=self.len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
 
                 # Wake up the other cpu cores that were sleeping
