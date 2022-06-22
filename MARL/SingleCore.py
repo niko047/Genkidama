@@ -13,6 +13,12 @@ torch.set_printoptions(profile="full")
 TODO:
 + Add tdqm to keep track of at which iteration the algorithm is
 + Apply inline changes of average rewards and print it in a prettier way 
+
+FIX:
+/home/nicco047/Projects/thesis/MARL/SingleCore.py:147: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow.
+Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor.
+(Triggered internally at  /root/pytorch/torch/csrc/utils/tensor_new.cpp:207.)
+
 ANALYSIS OF THE CODE:
 1. First part of synchronization coming from the designated node
 2. Interaction of agents with the environment (algorithm independent)
@@ -96,9 +102,13 @@ class SingleCoreProcess(mp.Process):
         self.results = []
         self.cum_grads_list = []
 
-    @staticmethod
-    def reset_environment():
-        pass
+    def reset_environment(self):
+        temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
+        state = self.env.reset()
+        ep_reward = 0
+        temporary_buffer_idx = 0
+        return temporary_buffer, temporary_buffer_idx, state, ep_reward
+
 
     def run(self):
         # TODO - Put all of this inside a function
@@ -125,11 +135,7 @@ class SingleCoreProcess(mp.Process):
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
 
-            #TODO - Put all of this inside an initializer function (or a reset function)
-            temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
-            state = self.env.reset()
-            ep_reward = 0
-            temporary_buffer_idx = 0
+            temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
 
             # Generate training data and update buffer
             for j in range(self.num_steps):
