@@ -9,8 +9,17 @@ from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 torch.set_printoptions(profile="full")
 
-# TODO - Important, optimize the storage of information and the handling of temporary buffers, now it is inefficient
-# TODO - Read papers on stochastic weight averaging
+"""
+TODO:
++ Add tdqm to keep track of at which iteration the algorithm is
++ Apply inline changes of average rewards and print it in a prettier way 
+ANALYSIS OF THE CODE:
+1. First part of synchronization coming from the designated node
+2. Interaction of agents with the environment (algorithm independent)
+3. Discounting of rewards (by default one step)
+4. Storage of the interaction of the environment either in ReplayBuffer or TemporaryBuffer (algorithm dependent)
+5. Computation of gradients and update of the network
+"""
 
 
 class SingleCoreProcess(mp.Process):
@@ -87,7 +96,12 @@ class SingleCoreProcess(mp.Process):
         self.results = []
         self.cum_grads_list = []
 
+    @staticmethod
+    def reset_environment():
+        pass
+
     def run(self):
+        # TODO - Put all of this inside a function
         if self.is_designated_core:
             old_weights_bytes = self.single_core_neural_net.encode_parameters()
             len_msg_bytes = len(old_weights_bytes)
@@ -108,27 +122,20 @@ class SingleCoreProcess(mp.Process):
             print(f"Designated Core Finished to receive bytes from parent")
             print(f"STARTING NOW TO MANAGE THE PROCESSES")
 
-        i = 0
-        #for i in range(self.num_episodes):
-        while True:
-            # Resets the environment
+        for i in range(self.num_episodes):
+            # Creates temporary buffer and resets the environment
+
+            #TODO - Put all of this inside an initializer function (or a reset function)
             temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
             state = self.env.reset()
             ep_reward = 0
-            #DEC temporary_buffer_idx = 0
             temporary_buffer_idx = 0
+
             # Generate training data and update buffer
             for j in range(self.num_steps):
 
                 if not self.is_designated_core:
-                    # Chooses an action and takes it, modifies inplace the temporary buffer
-                    # state, reward, done = ActorCritic.agent_step(
-                    #     neural_net=self.single_core_neural_net,
-                    #     env=self.env,
-                    #     state=state,
-                    #     temporary_buffer=temporary_buffer
-                    # )
-                    # ep_reward += reward
+                    # TODO - Put all of this inside a function
 
                     # Transforms the numpy array state into a tensor object of float32
                     state_tensor = torch.Tensor(state).to(torch.float32)
@@ -164,20 +171,14 @@ class SingleCoreProcess(mp.Process):
                             while not torch.all(self.starting_semaphor[1:]):
                                 pass
 
+                        # TODO - Make this into a function, it is just masking the temporary rewards in case it did not reach 5 interactions
                         if done:
                             zero_row = torch.zeros(size=(self.len_state + 2,))
                             mask = ~(temporary_buffer == zero_row)[:, 0]
                             # Masks the array for valid rows
                             temporary_buffer = temporary_buffer[mask]
 
-                        # ActorCritic.discount_rewards(
-                        #     neural_net=self.single_core_neural_net,
-                        #     shared_memory_buffer=self.b,
-                        #     temporary_buffer=temporary_buffer,
-                        #     len_state=self.len_state,
-                        #     gamma=self.gamma,
-                        #     done=done
-                        # )
+                        # TODO - Make these flipping and discounting operation into a function
                         temporary_buffer_flipped = torch.flip(temporary_buffer, dims=(0,))
 
                         if done:
@@ -216,9 +217,8 @@ class SingleCoreProcess(mp.Process):
                                 self.single_core_neural_net.parameters(),
                                 self.cores_orchestrator_neural_net.parameters()
                         )):
-                            # print(f'GRADIENT IS {lp.grad} OF TYPE {type(lp.grad)}')
                             gp._grad = lp.grad
-                            # Here also copy them to the other episode-wise gradient bucket, without optimizing
+
                         self.optimizer.step()
 
                         self.optimizer.zero_grad()
@@ -226,6 +226,7 @@ class SingleCoreProcess(mp.Process):
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
                     if (j + 1) % 20 == 0:
+                        # TODO - Make this into a function
                         with torch.no_grad():
                             orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
                             vector_to_parameters(
@@ -236,14 +237,14 @@ class SingleCoreProcess(mp.Process):
                     if done:
                         break
 
-
+            # Appends the current reward to the list of rewards
             if not self.is_designated_core: self.results.append(ep_reward)
 
-            i += 1
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
-            # print(f'Designated core it at line 246')
+
             # Update here the local network sending the updates
             if self.is_designated_core:
+                # TODO - Make this into a function
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
@@ -276,7 +277,6 @@ class SingleCoreProcess(mp.Process):
                 vector_to_parameters(
                     orchestrator_params, self.single_core_neural_net.parameters()
                 )
-            # self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
@@ -291,12 +291,3 @@ class SingleCoreProcess(mp.Process):
 
         # Signals the outer process that it will not be receiving any more information
         self.res_queue.put(None)
-
-
-
-"""
-Observations from using the model and adjustments:
-1. Faster CPUs (or the ones that perform worse, by finishing episodes early) update the network many more times
-than the good ones, thus if they all have the same weight, they slow down the process.
-2. Weight the updates based on the overall episode performance
-"""
