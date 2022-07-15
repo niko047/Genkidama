@@ -40,7 +40,7 @@ len_reward = 1
 
 shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr": 1e-4,
+    "lr": 1e-3,
     "momentum": 0.9
 }
 
@@ -56,7 +56,7 @@ num_steps = 3000
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function
 alpha = 1
-gamma=.9
+gamma=.99
 
 
 def start_child():
