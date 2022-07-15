@@ -8,17 +8,11 @@ import gym
 import matplotlib.pyplot as plt
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-torch.set_printoptions(profile="full")
 
 """
 TODO:
 + Add tdqm to keep track of at which iteration the algorithm is
 + Apply inline changes of average rewards and print it in a prettier way 
-
-FIX:
-/home/nicco047/Projects/thesis/MARL/SingleCore.py:147: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow.
-Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor.
-(Triggered internally at  /root/pytorch/torch/csrc/utils/tensor_new.cpp:207.)
 
 ANALYSIS OF THE CODE:
 1. First part of synchronization coming from the designated node
@@ -81,8 +75,6 @@ class SingleCoreProcess(mp.Process):
             sample_from_shared_memory=sample_from_shared_memory,
             time_ordered_sampling=True,
             len_state=self.len_state,
-            len_action= 1,  # Change in case of a problem with multiple actions necessary
-            len_reward= 1  # Change in case of a problem with multiple rewards necessary
         )
         self.cpu_id = cpu_id
         self.batch_size = batch_size
@@ -99,9 +91,11 @@ class SingleCoreProcess(mp.Process):
         self.is_designated_core = True if not self.cpu_id else False
 
         self.gamma = gamma
+        self.start_end_msg = None
 
         self.results = []
         self.cum_grads_list = []
+
 
     def reset_environment(self):
         """Resets the environment at episode start"""
@@ -163,6 +157,7 @@ class SingleCoreProcess(mp.Process):
         print(f"########## STARTING INITIALIZATION OF NODE, HANDSHAKING ##########")
         print(f'=> Length of the weights is {len_msg_bytes} bytes.')
         start_end_msg = b' ' * len_msg_bytes
+        self.start_end_msg = start_end_msg
         print(f'=> Starting the SYN with ADDRESS: {self.address}')
         Client.handshake(
             conn_to_parent=self.socket_connection,
@@ -312,7 +307,7 @@ class SingleCoreProcess(mp.Process):
 
         # The designated core can then close the connection with the parent
         if self.is_designated_core:
-            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=start_end_msg)
+            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.start_end_msg)
 
         # Print here the results of the algorithm
         # plt.plot(range(self.num_episodes), self.results)

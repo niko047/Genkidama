@@ -85,7 +85,7 @@ class Parent(GeneralSocket):
                 break
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.85)
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 

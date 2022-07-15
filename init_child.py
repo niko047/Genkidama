@@ -49,8 +49,8 @@ num_iters = 5
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 200
-num_steps = 500
+num_episodes = 500
+num_steps = 3000
 
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net

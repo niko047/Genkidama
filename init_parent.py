@@ -34,8 +34,4 @@ def start_parent():
     # torch.save(net, 'cart_pole_model_a4c.pt')
 
 if __name__ == '__main__':
-    start = timer()
     start_parent()
-    end = timer()
-
-    print(f'{end - start} seconds elapsed')

@@ -12,9 +12,7 @@ class ReplayBuffers(object):
                  replacement: bool,
                  sample_from_shared_memory: bool,
                  time_ordered_sampling: bool,
-                 len_state: int,
-                 len_action: int,
-                 len_reward: int):
+                 len_state: int):
         """
         :param shared_replay_buffer:    Tensor shared amongst CPU processes
         :param cpu_id:                  Unique id of the CPU using the current object
@@ -36,8 +34,8 @@ class ReplayBuffers(object):
         self.time_ordered_sampling = time_ordered_sampling
 
         self.len_state = len_state
-        self.len_action = len_action
-        self.len_reward = len_reward
+        self.len_action = 1
+        self.len_reward = 1
 
     @staticmethod
     def init_global_buffer(len_interaction: int,
