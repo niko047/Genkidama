@@ -259,7 +259,7 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % 20 == 0:
+                    if (j + 1) % 10 == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
