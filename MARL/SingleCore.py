@@ -314,5 +314,6 @@ class SingleCoreProcess(mp.Process):
         # plt.waitforbuttonpress()
 
         # Signals the outer process that it will not be receiving any more information
-        torch.save(self.cores_orchestrator_neural_net, 'lunar_lander_a4c.pt')
+        if self.is_designated_core:
+            torch.save(self.cores_orchestrator_neural_net, 'lunar_lander_a4c.pt')
         self.res_queue.put(None)

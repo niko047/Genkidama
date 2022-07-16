@@ -26,7 +26,7 @@ plt.hist(rewards, bins=100)
 path = 'runs'
 os.chdir('runs')
 files = os.listdir()
-filename = 'run_test'
+filename = 'run_test_a4c'
 
 
 # if not files:
