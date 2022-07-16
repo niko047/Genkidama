@@ -6,6 +6,7 @@ from MARL.Manager.manager import Manager
 from torch.optim import SGD
 from MARL.Nets.SmallNet import SmallNet
 import matplotlib.pyplot as plt
+import pandas as pd
 
 mp.set_start_method('spawn', force=True)
 
@@ -15,7 +16,7 @@ len_reward = 1
 
 LEN_ITERATIONS: int = 5
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 150
+NUM_EPISODES: int = 500
 NUM_STEPS: int = 2000
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False
@@ -37,9 +38,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                       replacement=SAMPLE_WITH_REPLACEMENT,
                       sample_from_shared_memory=SAMPLE_FROM_SHARED_MEMORY,
                       time_ordered_sampling=True,
-                      len_state=len_state,
-                      len_action=1,
-                      len_reward=1)
+                      len_state=len_state)
 
     rewards_list = []
 
@@ -147,7 +146,7 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 temporary_buffer = torch.zeros(size=(LEN_ITERATIONS, len_state + 2))
                 temporary_buffer_idx = 0
 
-            if (j + 1) % 25 == 0 or done:
+            if (j + 1) % 15 == 0 or done:
                 # Loads the state dict locally after the global optimization step
                 loc_net.load_state_dict(glob_net.state_dict())
                 print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
@@ -159,6 +158,10 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 break
 
     plt.plot(range(NUM_EPISODES), rewards_list)
+    results_path = f'runs/A3C/{cpu_id}_history.csv'
+    df_res = pd.DataFrame({'rewards': rewards_list})
+    df_res.to_csv(results_path)
+
     plt.waitforbuttonpress()
 
     res_queue.put(None)
