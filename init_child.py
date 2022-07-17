@@ -40,7 +40,7 @@ len_reward = 1
 
 shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr": 1e-4,
+    "lr": 5e-3,
     "momentum": 0.9
 }
 
@@ -49,7 +49,7 @@ num_iters = 5
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 3000
+num_episodes = 500
 num_steps = 2000
 
 

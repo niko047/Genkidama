@@ -244,13 +244,8 @@ class SingleCoreProcess(mp.Process):
                         loss.backward()
                         # Pushes the gradients accumulated from core to the orchestrator net
                         self.push_gradients_to_orchestrator()
-                        p1 = pickle.loads(pickle.dumps(parameters_to_vector(self.cores_orchestrator_neural_net.parameters())))
                         # Performs backprop
                         self.optimizer.step()
-                        p2 = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-
-                        print(f'BEFORE: {p1[:5]}')
-                        print(f'AFTER: {p2[:5]}')
 
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
@@ -268,15 +263,15 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Every 50 episodes
-            # if i % 99 == 0 and i:
-            #     # Save episode rewards
-            #     results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
-            #     df_res = pd.DataFrame({'rewards': self.results})
-            #     df_res.to_csv(results_path)
-            #
-            #     # Save weights
-            #     if self.is_designated_core:
-            #         torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
+            if i % 99 == 0 and i:
+                # Save episode rewards
+                results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
+                df_res = pd.DataFrame({'rewards': self.results})
+                df_res.to_csv(results_path)
+
+                # Save weights
+                if self.is_designated_core:
+                    torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
 
 
             # Update here the local network sending the updates
