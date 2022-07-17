@@ -197,6 +197,7 @@ class SingleCoreProcess(mp.Process):
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
+            done = False
 
             for j in range(self.num_steps):
                 if done: break
