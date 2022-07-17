@@ -53,9 +53,6 @@ class CoresOrchestrator(object):
         self.orchestrator_neural_net = self.neural_net(s_dim=8, a_dim=4) # TODO - Change
         self.orchestrator_neural_net.share_memory()
 
-        self.empty_net_trial = self.neural_net(s_dim=8, a_dim=4)
-        self.empty_net_trial.share_memory()
-
         self.gym_rl_env_str = gym_rl_env_str
 
         self.shared_optimizer = shared_optimizer(self.orchestrator_neural_net.parameters(), **shared_optimizer_kwargs)

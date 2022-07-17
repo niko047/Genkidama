@@ -183,11 +183,10 @@ class SingleCoreProcess(mp.Process):
 
     def pull_parameters_to_single_core(self):
         """Takes the parameter of the orchestrator net and with those replaces the single net parameters"""
-        with torch.no_grad():
-            orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-            vector_to_parameters(
-                orchestrator_params, self.single_core_neural_net.parameters()
-            )
+        orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+        vector_to_parameters(
+            orchestrator_params, self.single_core_neural_net.parameters()
+        )
 
     def run(self):
         """Main function, starts the whole process, the underlying algorithm is this function itself"""
@@ -198,9 +197,7 @@ class SingleCoreProcess(mp.Process):
             # Creates temporary buffer and resets the environment
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
             done = False
-
             for j in range(self.num_steps):
-                if done: break
 
                 if not self.is_designated_core:
                     # Interacts with the environment and return results
@@ -215,7 +212,7 @@ class SingleCoreProcess(mp.Process):
                     temporary_buffer_idx += 1
 
                     # TODO - Every once in a while, define better this condition
-                    if (j + 1) % 10 == 0:
+                    if (j + 1) % 5 == 0:
                         # Resets the index of the temporary buffer because we are about to reset the buffer itself
                         temporary_buffer_idx = 0
 
@@ -226,12 +223,10 @@ class SingleCoreProcess(mp.Process):
                             while not torch.all(self.starting_semaphor[1:]):
                                 pass
 
-                        # TODO - Make this into a function, it is just masking the temporary rewards in case it did not reach 5 interactions
-                        if done:
-                            zero_row = torch.zeros(size=(self.len_state + 2,))
-                            mask = ~(temporary_buffer == zero_row)[:, 0]
-                            # Masks the array for valid rows (non-zero rows) in case the agent died halfway
-                            temporary_buffer = temporary_buffer[mask]
+                        zero_row = torch.zeros(size=(self.len_state + 2,))
+                        mask = ~(temporary_buffer == zero_row)[:, 0]
+                        # Masks the array for valid rows (non-zero rows) in case the agent died halfway
+                        temporary_buffer = temporary_buffer[mask]
 
                         # Takes the data it has experienced over the last 5 <= steps and discount the rewards
                         state_samples, action_samples, rewards_samples = self.return_sar_discounted(
@@ -254,12 +249,10 @@ class SingleCoreProcess(mp.Process):
                         self.push_gradients_to_orchestrator()
                         # Performs backprop
                         self.optimizer.step()
-                        # Zeroes out the gradients
-                        self.optimizer.zero_grad()
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % 30 == 0:
+                    if (j + 1) % 10 == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
@@ -285,7 +278,7 @@ class SingleCoreProcess(mp.Process):
 
             # Update here the local network sending the updates
             if self.is_designated_core:
-                # TODO - Make this into a function
+                # Wait until all the other cpus have finished their episode
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass

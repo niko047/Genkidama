@@ -44,8 +44,8 @@ shared_opt_kwargs = {
     "momentum": 0.9
 }
 
-batch_size = 10
-num_iters = 10
+batch_size = 5
+num_iters = 5
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%

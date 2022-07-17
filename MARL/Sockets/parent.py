@@ -114,7 +114,7 @@ class Parent(GeneralSocket):
 
 
     def run_episode(self):
-        env = gym.make("CartPole-v1")
+        env = gym.make("LunarLander-v2")
         state = env.reset()
         done = False
         reward = 0
@@ -125,6 +125,7 @@ class Parent(GeneralSocket):
             action_chosen = self.neural_net.choose_action(state_tensor)
 
             state, r, done, _ = env.step(action_chosen)
-            reward += r if not done else -1
+            reward += r
+        print(f'CURRENT REWARD FROM EPISODE IS : {reward}')
 
         return reward
