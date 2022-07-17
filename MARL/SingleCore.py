@@ -272,7 +272,7 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Every 50 episodes
-            if i % 49 == 0 and not i:
+            if i % 49 == 0 and i:
                 # Save episode rewards
                 results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
                 df_res = pd.DataFrame({'rewards': self.results})
