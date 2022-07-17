@@ -286,12 +286,17 @@ class SingleCoreProcess(mp.Process):
                     conn_to_parent=self.socket_connection,
                     neural_net=self.cores_orchestrator_neural_net
                 )
+                print(f'Old Weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 # Wait for response and update current
                 Client.wait_receive_update(
                     conn_to_parent=self.socket_connection,
                     len_msg_bytes=self.len_msg_bytes,
                     neural_net=self.cores_orchestrator_neural_net)
+
+                print(f'New Weights Implemented: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+
+
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False

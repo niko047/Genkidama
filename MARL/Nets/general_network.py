@@ -28,6 +28,7 @@ class GeneralNeuralNet(object):
         with torch.no_grad():
             flattened_new_params = torchload(io.BytesIO(b))
             flattened_old_params = parameters_to_vector(self.parameters())
+            print(f'New weights received {flattened_new_params}')
             # Alpha determines the learning contribute of each worker at each gradient sent
             flat_weighted_avg = (1-alpha) * flattened_old_params + alpha * flattened_new_params
             vector_to_parameters(flat_weighted_avg, self.parameters())

@@ -15,6 +15,8 @@ from .general_socket import GeneralSocket
 import threading
 import gym
 import torch
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
+
 from torch.nn.utils import parameters_to_vector
 
 torch.set_printoptions(profile='full')
@@ -84,8 +86,16 @@ class Parent(GeneralSocket):
             if new_weights_bytes == start_end_msg:
                 break
 
+            print(f'Old weights: {parameters_to_vector(self.neural_net.parameters())}')
+
+
+
+
             # Upload the new weights to the network
             self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.7)
+
+            print(f'New')
+
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
