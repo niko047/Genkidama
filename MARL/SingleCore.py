@@ -281,20 +281,22 @@ class SingleCoreProcess(mp.Process):
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
 
-                # Send the old data to the global network
-                Client.prepare_send(
-                    conn_to_parent=self.socket_connection,
-                    neural_net=self.cores_orchestrator_neural_net
-                )
-                print(f'Old Weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                if j%5 == 0:
 
-                # Wait for response and update current
-                Client.wait_receive_update(
-                    conn_to_parent=self.socket_connection,
-                    len_msg_bytes=self.len_msg_bytes,
-                    neural_net=self.cores_orchestrator_neural_net)
+                    # Send the old data to the global network
+                    Client.prepare_send(
+                        conn_to_parent=self.socket_connection,
+                        neural_net=self.cores_orchestrator_neural_net
+                    )
+                    print(f'Old Weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
-                print(f'New Weights Implemented: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                    # Wait for response and update current
+                    Client.wait_receive_update(
+                        conn_to_parent=self.socket_connection,
+                        len_msg_bytes=self.len_msg_bytes,
+                        neural_net=self.cores_orchestrator_neural_net)
+
+                    print(f'New Weights Implemented: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
 
 
@@ -308,7 +310,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             # Pull parameters from orchestrator to each single node
-            self.pull_parameters_to_single_core()
+            if j % 5 == 0: self.pull_parameters_to_single_core()
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
