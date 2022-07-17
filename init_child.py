@@ -40,7 +40,7 @@ len_reward = 1
 
 shared_optimizer = SGD
 shared_opt_kwargs = {
-    "lr": 3e-4,
+    "lr": 1e-4,
     "momentum": 0.9
 }
 

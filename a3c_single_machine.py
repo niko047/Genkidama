@@ -16,7 +16,7 @@ len_reward = 1
 
 LEN_ITERATIONS: int = 5
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 500
+NUM_EPISODES: int = 150
 NUM_STEPS: int = 2000
 BATCH_SIZE: int = 5
 SAMPLE_FROM_SHARED_MEMORY: bool = False

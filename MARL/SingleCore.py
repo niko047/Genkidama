@@ -250,9 +250,10 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % 10 == 0:
+                    if (j + 1) % 15 == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
+                        print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
                     if done:
                         break
@@ -260,7 +261,7 @@ class SingleCoreProcess(mp.Process):
             # Appends the current reward to the list of rewards
             if not self.is_designated_core: self.results.append(ep_reward)
 
-            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
+
 
             # Every 50 episodes
             if i % 99 == 0 and i:
