@@ -44,13 +44,13 @@ shared_opt_kwargs = {
     "momentum": 0.9
 }
 
-batch_size = 5
-num_iters = 5
+batch_size = 10
+num_iters = 10
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 500
-num_steps = 3000
+num_episodes = 3000
+num_steps = 2000
 
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net

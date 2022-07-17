@@ -215,7 +215,7 @@ class SingleCoreProcess(mp.Process):
                     temporary_buffer_idx += 1
 
                     # TODO - Every once in a while, define better this condition
-                    if (j + 1) % 5 == 0:
+                    if (j + 1) % 10 == 0:
                         # Resets the index of the temporary buffer because we are about to reset the buffer itself
                         temporary_buffer_idx = 0
 
@@ -259,7 +259,7 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % 15 == 0:
+                    if (j + 1) % 30 == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
@@ -272,7 +272,7 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Every 50 episodes
-            if i % 49 == 0 and i:
+            if i % 99 == 0 and i:
                 # Save episode rewards
                 results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
                 df_res = pd.DataFrame({'rewards': self.results})
