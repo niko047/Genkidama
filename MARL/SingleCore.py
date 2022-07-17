@@ -279,7 +279,7 @@ class SingleCoreProcess(mp.Process):
 
                 # Save weights
                 if self.is_designated_core:
-                    torch.save(self.cores_orchestrator_neural_net, f'A4C/episode_{i}_lunar_lander_a4c.pt')
+                    torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
 
 
             # Update here the local network sending the updates
