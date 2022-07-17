@@ -249,7 +249,8 @@ class SingleCoreProcess(mp.Process):
                         self.optimizer.step()
                         p2 = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
 
-                        print(f'Model is the same after optimization: {p1 == p2}')
+                        print(f'BEFORE: {p1[:5]}')
+                        print(f'AFTER: {p2[:5]}')
 
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
