@@ -8,6 +8,7 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+import pickle
 
 
 """
@@ -194,7 +195,6 @@ class SingleCoreProcess(mp.Process):
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
-            done = False
             for j in range(self.num_steps):
 
                 if not self.is_designated_core:
@@ -242,11 +242,15 @@ class SingleCoreProcess(mp.Process):
                         self.optimizer.zero_grad()
                         # Performs calculation of the backward pass
                         loss.backward()
-
                         # Pushes the gradients accumulated from core to the orchestrator net
                         self.push_gradients_to_orchestrator()
+                        p1 = pickle.loads(pickle.dumps(parameters_to_vector(self.cores_orchestrator_neural_net.parameters())))
                         # Performs backprop
                         self.optimizer.step()
+                        p2 = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
+
+                        print(f'Model is the same after optimization: {p1 == p2}')
+
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
@@ -263,15 +267,15 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Every 50 episodes
-            if i % 99 == 0 and i:
-                # Save episode rewards
-                results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
-                df_res = pd.DataFrame({'rewards': self.results})
-                df_res.to_csv(results_path)
-
-                # Save weights
-                if self.is_designated_core:
-                    torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
+            # if i % 99 == 0 and i:
+            #     # Save episode rewards
+            #     results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
+            #     df_res = pd.DataFrame({'rewards': self.results})
+            #     df_res.to_csv(results_path)
+            #
+            #     # Save weights
+            #     if self.is_designated_core:
+            #         torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
 
 
             # Update here the local network sending the updates
@@ -281,22 +285,22 @@ class SingleCoreProcess(mp.Process):
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
 
-                if i%5 == 0:
-
-                    # Send the old data to the global network
-                    Client.prepare_send(
-                        conn_to_parent=self.socket_connection,
-                        neural_net=self.cores_orchestrator_neural_net
-                    )
-                    print(f'Old Weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-
-                    # Wait for response and update current
-                    Client.wait_receive_update(
-                        conn_to_parent=self.socket_connection,
-                        len_msg_bytes=self.len_msg_bytes,
-                        neural_net=self.cores_orchestrator_neural_net)
-
-                    print(f'New Weights Implemented: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                # if i%5 == 0:
+                #
+                #     # Send the old data to the global network
+                #     Client.prepare_send(
+                #         conn_to_parent=self.socket_connection,
+                #         neural_net=self.cores_orchestrator_neural_net
+                #     )
+                #     print(f'Old Weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                #
+                #     # Wait for response and update current
+                #     Client.wait_receive_update(
+                #         conn_to_parent=self.socket_connection,
+                #         len_msg_bytes=self.len_msg_bytes,
+                #         neural_net=self.cores_orchestrator_neural_net)
+                #
+                #     print(f'New Weights Implemented: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
 
 
@@ -310,14 +314,14 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             # Pull parameters from orchestrator to each single node
-            if i % 5 == 0: self.pull_parameters_to_single_core()
+            # if i % 5 == 0: self.pull_parameters_to_single_core()
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
 
         # The designated core can then close the connection with the parent
-        if self.is_designated_core:
-            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.start_end_msg)
+        # if self.is_designated_core:
+        #     Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.start_end_msg)
 
         # Print here the results of the algorithm
         # plt.plot(range(self.num_episodes), self.results)
