@@ -48,13 +48,11 @@ class SingleCoreProcess(mp.Process):
                  num_steps,
                  socket_connection,
                  address,
-                 gamma,
-                 empty_net_trial
+                 gamma
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net(s_dim=8, a_dim=4) # TODO - pass these as params
         self.cores_orchestrator_neural_net = cores_orchestrator_neural_net
-        self.empty_net_trial = empty_net_trial
 
         self.env = gym.make(gym_rl_env_str)
         self.len_state = len_state

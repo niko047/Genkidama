@@ -110,8 +110,7 @@ class CoresOrchestrator(object):
             num_steps=self.num_steps,
             socket_connection=conn,
             address=addr,
-            gamma=self.gamma,
-            empty_net_trial=self.empty_net_trial
+            gamma=self.gamma
         ) for cpu_id in
             range(self.n_available_cores)]
 
