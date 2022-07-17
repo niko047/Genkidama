@@ -253,8 +253,6 @@ class SingleCoreProcess(mp.Process):
                     if (j + 1) % 15 == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
-                        print(f'First 8: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())[:8]}')
-                        print(f'Last 8: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())[-8:]}')
 
                     if done:
                         break
@@ -263,6 +261,7 @@ class SingleCoreProcess(mp.Process):
             if not self.is_designated_core: self.results.append(ep_reward)
 
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
+            print(f'Last 8: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())[-8:]}')
 
             # Every 50 episodes
             if i % 99 == 0 and i:
