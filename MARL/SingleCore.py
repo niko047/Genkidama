@@ -199,19 +199,19 @@ class SingleCoreProcess(mp.Process):
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
 
             for j in range(self.num_steps):
+                if done: break
 
                 if not self.is_designated_core:
                     # Interacts with the environment and return results
                     state, reward, done, tensor_sar = self.environment_interaction(state)
 
-                    if not done:
-                        # Add the reward to the cumulative reward bucket
-                        ep_reward += reward
+                    # Add the reward to the cumulative reward bucket
+                    ep_reward += reward
 
-                        # Store current interaction in the tensor S,A,R, of this step of the episode
-                        tensor_sar[-1] = reward
-                        temporary_buffer[temporary_buffer_idx, :] = tensor_sar
-                        temporary_buffer_idx += 1
+                    # Store current interaction in the tensor S,A,R, of this step of the episode
+                    tensor_sar[-1] = reward
+                    temporary_buffer[temporary_buffer_idx, :] = tensor_sar
+                    temporary_buffer_idx += 1
 
                     # TODO - Every once in a while, define better this condition
                     if (j + 1) % 5 == 0:
