@@ -86,12 +86,14 @@ class Parent(GeneralSocket):
                 break
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.8)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.6)
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1
+            if interaction_count % 100 == 0:
+                torch.save(self.neural_net, f'weights_a4c_{interaction_count}_alpha_60.pt')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""

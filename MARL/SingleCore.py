@@ -261,7 +261,6 @@ class SingleCoreProcess(mp.Process):
             if not self.is_designated_core: self.results.append(ep_reward)
 
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
-            print(f'Last 8: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())[-8:]}')
 
             # Every 50 episodes
             if i % 99 == 0 and i:
