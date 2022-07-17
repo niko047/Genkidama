@@ -1,4 +1,5 @@
 import torch.multiprocessing as mp
+import pandas as pd
 import numpy as np
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Sockets.child import Client
@@ -56,8 +57,6 @@ class SingleCoreProcess(mp.Process):
         self.empty_net_trial = empty_net_trial
 
         self.env = gym.make(gym_rl_env_str)
-        # TODO - Define what has to be saved in the buffer
-        # (*states, *actions, *actualized_rewards)
         self.len_state = len_state
 
         self.starting_semaphor = starting_semaphor
@@ -271,6 +270,18 @@ class SingleCoreProcess(mp.Process):
 
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
+            # Every 50 episodes
+            if i % 49 == 0:
+                # Save episode rewards
+                results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
+                df_res = pd.DataFrame({'rewards': self.results})
+                df_res.to_csv(results_path)
+
+                # Save weights
+                if self.is_designated_core:
+                    torch.save(self.cores_orchestrator_neural_net, f'A4C/episode_{i}_lunar_lander_a4c.pt')
+
+
             # Update here the local network sending the updates
             if self.is_designated_core:
                 # TODO - Make this into a function
@@ -313,7 +324,4 @@ class SingleCoreProcess(mp.Process):
         # plt.plot(range(self.num_episodes), self.results)
         # plt.waitforbuttonpress()
 
-        # Signals the outer process that it will not be receiving any more information
-        if self.is_designated_core:
-            torch.save(self.cores_orchestrator_neural_net, 'lunar_lander_a4c.pt')
         self.res_queue.put(None)
