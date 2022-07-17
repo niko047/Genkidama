@@ -281,7 +281,7 @@ class SingleCoreProcess(mp.Process):
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
 
-                if j%5 == 0:
+                if i%5 == 0:
 
                     # Send the old data to the global network
                     Client.prepare_send(
@@ -310,7 +310,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
             # Pull parameters from orchestrator to each single node
-            if j % 5 == 0: self.pull_parameters_to_single_core()
+            if i % 5 == 0: self.pull_parameters_to_single_core()
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
