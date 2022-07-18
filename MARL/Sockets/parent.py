@@ -102,19 +102,21 @@ class Parent(GeneralSocket):
                 self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.75)
             
-            self.storage_current.append(parameters_to_vector(self.neural_net.parameters()).detach().numpy())
+            # self.storage_current.append(parameters_to_vector(self.neural_net.parameters()).detach().numpy())
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1
-            if interaction_count % 20 == 0:
-                df = pd.DataFrame(np.array(self.storage_current))
-                df1 = pd.DataFrame(np.array(self.storage_received))
-                df.to_csv('storage_current.csv')
-                df1.to_csv('storage_received.csv')
+            # if interaction_count % 20 == 0:
+            #     df = pd.DataFrame(np.array(self.storage_current))
+            #     df1 = pd.DataFrame(np.array(self.storage_received))
+            #     df.to_csv('storage_current.csv')
+            #     df1.to_csv('storage_received.csv')
+            if interaction_count % 70 == 0:
+                torch.save(self.neural_net, 'lunar_lander_a4c_75.pt')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""

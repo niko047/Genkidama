@@ -299,9 +299,9 @@ class SingleCoreProcess(mp.Process):
                     pass
 
                 self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
-                if i == 20:
-                    df = pd.DataFrame(np.array(self.storage))
-                    df.to_csv('results.csv')
+                # if i == 20:
+                #     df = pd.DataFrame(np.array(self.storage))
+                #     df.to_csv('results.csv')
 
                 new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
                 # Sends the new weights over the network to the parent
