@@ -297,7 +297,7 @@ class SingleCoreProcess(mp.Process):
 
                 new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
                 # Sends the new weights over the network to the parent
-                print(f'[CHILD] Sending data over')
+                print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
                 self.socket_connection.send(new_weights_bytes)
 
                 # Wait for weights to be received
@@ -307,6 +307,7 @@ class SingleCoreProcess(mp.Process):
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
                 self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+                print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
