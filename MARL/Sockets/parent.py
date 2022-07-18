@@ -102,7 +102,7 @@ class Parent(GeneralSocket):
                 self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.75)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
             
             # self.storage_current.append(parameters_to_vector(self.neural_net.parameters()).detach().numpy())
 
@@ -115,8 +115,8 @@ class Parent(GeneralSocket):
             #     df1 = pd.DataFrame(np.array(self.storage_received))
             #     df.to_csv('storage_current.csv')
             #     df1.to_csv('storage_received.csv')
-            if interaction_count % 70 == 0:
-                torch.save(self.neural_net, 'lunar_lander_a4c_75.pt')
+            if interaction_count % 50 == 0:
+                torch.save(self.neural_net, f'lunar_lander_a4c_{interaction_count}.pt')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""

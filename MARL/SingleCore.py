@@ -297,8 +297,11 @@ class SingleCoreProcess(mp.Process):
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
+                
+                if i %50 == 0 and i:
+                    torch.save(self.cores_orchestrator_neural_net, 'model_{i}.pt')
 
-                self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
+                # self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
                 # if i == 20:
                 #     df = pd.DataFrame(np.array(self.storage))
                 #     df.to_csv('results.csv')
