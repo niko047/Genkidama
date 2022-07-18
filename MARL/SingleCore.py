@@ -285,6 +285,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
                 self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
+                print(self.storage)
                 # Send the old data to the global network
                 Client.prepare_send(
                     conn_to_parent=self.socket_connection,
