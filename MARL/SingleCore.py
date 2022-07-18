@@ -247,13 +247,14 @@ class SingleCoreProcess(mp.Process):
                         # Pushes the gradients accumulated from core to the orchestrator net
                         self.push_gradients_to_orchestrator()
 
-                        pre_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
+                        # pre_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
                         # Performs backprop
                         self.optimizer.step()
 
-                        post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
+                        # post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
 
-                        print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
+                        # print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
+
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
