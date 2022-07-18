@@ -265,8 +265,7 @@ class SingleCoreProcess(mp.Process):
 
             # Every 50 episodes
             if i % 20 == 0 and i:
-                df = pd.DataFrame(np.array(self.storage))
-                df.to_csv('results.csv')
+                pass
                 # Save episode rewards
                 # results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
                 # df_res = pd.DataFrame({'rewards': self.results})
@@ -285,7 +284,9 @@ class SingleCoreProcess(mp.Process):
                     pass
 
                 self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
-                print(self.storage)
+                if i == 20:
+                    df = pd.DataFrame(np.array(self.storage))
+                    df.to_csv('results.csv')
                 # Send the old data to the global network
                 Client.prepare_send(
                     conn_to_parent=self.socket_connection,
