@@ -265,7 +265,7 @@ class SingleCoreProcess(mp.Process):
 
             # Every 50 episodes
             if i % 20 == 0 and i:
-                df = pd.DataFrame(self.storage)
+                df = pd.DataFrame(np.array(self.storage))
                 df.to_csv('results.csv')
                 # Save episode rewards
                 # results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
@@ -284,7 +284,7 @@ class SingleCoreProcess(mp.Process):
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
 
-                self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach())
+                self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
                 # Send the old data to the global network
                 Client.prepare_send(
                     conn_to_parent=self.socket_connection,
