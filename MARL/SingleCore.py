@@ -256,7 +256,7 @@ class SingleCoreProcess(mp.Process):
 
                         print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
                         if self.cpu_id == 1:
-                            self.storage_running.append(post_backprop)
+                            self.storage_running.append(post_backprop.numpy())
                             if i == 20:
                                 df = pd.DataFrame(np.array(self.storage_running))
                                 df.to_csv('results_running.csv')
