@@ -9,7 +9,13 @@ Sketch of the algorithm:
 5. Repeat until covergence
 
 """
+import torch
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
+import torch.nn as nn
+from torch import save as torchsave
+from torch import load as torchload
 
+import io
 import socket
 
 import pandas as pd
@@ -31,7 +37,8 @@ class Parent(GeneralSocket):
         self.neural_net = network_blueprint
 
         self.rewards = []
-        self.storage = []
+        self.storage_current = []
+        self.storage_received = []
 
 
 
@@ -89,18 +96,24 @@ class Parent(GeneralSocket):
             if new_weights_bytes == start_end_msg:
                 break
 
+            with torch.no_grad():
+                flattened_new_params = torchload(io.BytesIO(new_weights_bytes))
+                self.storage_received.append(flattened_new_params)
+
             # Upload the new weights to the network
             self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=1)
             
-            self.storage.append(parameters_to_vector(self.neural_net.parameters()).detach())
+            self.storage_current.append(parameters_to_vector(self.neural_net.parameters()).detach())
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1
-            if interaction_count % 100 == 0:
-                df = pd.DataFrame(self.storage)
-                df.to_csv('results.csv')
+            if interaction_count % 25 == 0:
+                df = pd.DataFrame(self.storage_current)
+                df1 = pd.DataFrame(self.storage_received)
+                df.to_csv('storage_current.csv')
+                df1.to_csv('storage_received.csv')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""
