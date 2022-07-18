@@ -93,6 +93,7 @@ class SingleCoreProcess(mp.Process):
         self.results = []
         self.cum_grads_list = []
         self.storage = []
+        self.storage_running = []
 
 
     def reset_environment(self):
@@ -247,13 +248,19 @@ class SingleCoreProcess(mp.Process):
                         # Pushes the gradients accumulated from core to the orchestrator net
                         self.push_gradients_to_orchestrator()
 
-                        # pre_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
+                        pre_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
                         # Performs backprop
                         self.optimizer.step()
 
-                        # post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
+                        post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
 
-                        # print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
+                        print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
+                        if self.cpu_id == 1:
+                            self.storage_running.append(post_backprop)
+                            if i == 20:
+                                df = pd.DataFrame(np.array(self.storage_running))
+                                df.to_csv('results_running.csv')
+
 
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
@@ -297,7 +304,7 @@ class SingleCoreProcess(mp.Process):
 
                 new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
                 # Sends the new weights over the network to the parent
-                print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
                 self.socket_connection.send(new_weights_bytes)
 
                 # Wait for weights to be received
@@ -307,7 +314,7 @@ class SingleCoreProcess(mp.Process):
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
                 self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
-                print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
