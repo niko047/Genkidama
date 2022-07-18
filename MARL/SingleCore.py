@@ -199,7 +199,8 @@ class SingleCoreProcess(mp.Process):
             done = False
             for j in range(self.num_steps):
 
-                if not self.is_designated_core:
+                # if not self.is_designated_core:
+                if True:
                     # Interacts with the environment and return results
                     state, reward, done, tensor_sar = self.environment_interaction(state)
 
@@ -220,7 +221,7 @@ class SingleCoreProcess(mp.Process):
                         if i == 0:
                             # Waits for all of the cpus to provide a green light (min number of sampled item to begin process)
                             self.starting_semaphor[self.cpu_id] = True
-                            while not torch.all(self.starting_semaphor[1:]):
+                            while not torch.all(self.starting_semaphor[:]):  # 1:
                                 pass
 
                         zero_row = torch.zeros(size=(self.len_state + 2,))
@@ -255,11 +256,11 @@ class SingleCoreProcess(mp.Process):
                         post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
 
                         print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
-                        if self.cpu_id == 1:
-                            self.storage_running.append(post_backprop.numpy())
-                            if i == 20:
-                                df = pd.DataFrame(np.array(self.storage_running))
-                                df.to_csv('results_running.csv')
+                        #if self.cpu_id == 1:
+                        #    self.storage_running.append(post_backprop.numpy())
+                        #    if i == 20:
+                        #        df = pd.DataFrame(np.array(self.storage_running))
+                        #        df.to_csv('results_running.csv')
 
 
                         # Empties out the temporary buffer for the next 5 iterations
@@ -273,13 +274,13 @@ class SingleCoreProcess(mp.Process):
                         break
 
             # Appends the current reward to the list of rewards
-            if not self.is_designated_core: self.results.append(ep_reward)
+            self.results.append(ep_reward)
 
-            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
+            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
-            if i % 20 == 0 and i:
-                pass
+            # if i % 20 == 0 and i:
+                # pass
                 # Save episode rewards
                 # results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
                 # df_res = pd.DataFrame({'rewards': self.results})
