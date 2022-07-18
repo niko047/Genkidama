@@ -11,6 +11,9 @@ Sketch of the algorithm:
 """
 
 import socket
+
+import pandas as pd
+
 from .general_socket import GeneralSocket
 import threading
 import gym
@@ -28,6 +31,7 @@ class Parent(GeneralSocket):
         self.neural_net = network_blueprint
 
         self.rewards = []
+        self.storage = []
 
 
 
@@ -86,14 +90,17 @@ class Parent(GeneralSocket):
                 break
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.6)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=1)
+            
+            self.storage.append(parameters_to_vector(self.neural_net.parameters()).detach())
 
             # print(f"[PARENT] Received weights from {self.address}, New ones are \n {parameters_to_vector(self.neural_net.parameters())}")
 
             # Simple count of the number of interactions
             interaction_count += 1
             if interaction_count % 100 == 0:
-                torch.save(self.neural_net, f'weights_a4c_{interaction_count}_alpha_60.pt')
+                df = pd.DataFrame(self.storage)
+                df.to_csv('results.csv')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""

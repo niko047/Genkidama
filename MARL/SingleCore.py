@@ -92,6 +92,7 @@ class SingleCoreProcess(mp.Process):
 
         self.results = []
         self.cum_grads_list = []
+        self.storage = []
 
 
     def reset_environment(self):
@@ -263,15 +264,17 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}') if self.b.cpu_id else None
 
             # Every 50 episodes
-            if i % 99 == 0 and i:
+            if i % 100 == 0 and i:
+                df = pd.DataFrame(self.storage)
+                df.to_csv('results.csv')
                 # Save episode rewards
-                results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
-                df_res = pd.DataFrame({'rewards': self.results})
-                df_res.to_csv(results_path)
+                # results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
+                # df_res = pd.DataFrame({'rewards': self.results})
+                # df_res.to_csv(results_path)
 
                 # Save weights
-                if self.is_designated_core:
-                    torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
+                # if self.is_designated_core:
+                #     torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
 
 
             # Update here the local network sending the updates
@@ -281,6 +284,7 @@ class SingleCoreProcess(mp.Process):
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
 
+                self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach())
                 # Send the old data to the global network
                 Client.prepare_send(
                     conn_to_parent=self.socket_connection,
