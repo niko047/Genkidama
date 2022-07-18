@@ -294,17 +294,19 @@ class SingleCoreProcess(mp.Process):
                 if i == 20:
                     df = pd.DataFrame(np.array(self.storage))
                     df.to_csv('results.csv')
-                # Send the old data to the global network
-                Client.prepare_send(
-                    conn_to_parent=self.socket_connection,
-                    neural_net=self.cores_orchestrator_neural_net
-                )
 
-                # Wait for response and update current
-                Client.wait_receive_update(
-                    conn_to_parent=self.socket_connection,
-                    len_msg_bytes=self.len_msg_bytes,
-                    neural_net=self.cores_orchestrator_neural_net)
+                new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
+                # Sends the new weights over the network to the parent
+                print(f'[CHILD] Sending data over')
+                self.socket_connection.send(new_weights_bytes)
+
+                # Wait for weights to be received
+                recv_weights_bytes = b''
+                while len(recv_weights_bytes) < self.len_msg_bytes:
+                    recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
+
+                # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
+                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
 
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[1:] = False
