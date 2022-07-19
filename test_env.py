@@ -5,7 +5,7 @@ import os
 
 
 env = gym.make("LunarLander-v2")
-model = torch.load('runs/lunar_lander_a4c_75.pt')
+model = torch.load('lunar_lander_a4c_600.pt')
 num_episodes = 500
 
 rewards = []
@@ -26,7 +26,7 @@ plt.hist(rewards, bins=100)
 path = 'runs'
 os.chdir('runs')
 files = os.listdir()
-filename = 'lunar_lander_a4c_75'
+filename = 'lunar_lander_a4c_600'
 
 
 # if not files:

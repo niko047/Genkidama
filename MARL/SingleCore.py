@@ -279,16 +279,12 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
-            # if i % 20 == 0 and i:
-                # pass
+            if i % 50 == 0 and i:
+                pass
                 # Save episode rewards
-                # results_path = f'runs/A4C/core_{self.cpu_id}_episode_{i}_history.csv'
-                # df_res = pd.DataFrame({'rewards': self.results})
-                # df_res.to_csv(results_path)
-
-                # Save weights
-                # if self.is_designated_core:
-                #     torch.save(self.cores_orchestrator_neural_net, f'runs/A4C/episode_{i}_lunar_lander_a4c.pt')
+                results_path = f'runs/A4C/core_{self.cpu_id}_history.csv'
+                df_res = pd.DataFrame({'rewards': self.results})
+                df_res.to_csv(results_path)
 
 
             # Update here the local network sending the updates
@@ -297,9 +293,6 @@ class SingleCoreProcess(mp.Process):
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
-                
-                if i %50 == 0 and i:
-                    torch.save(self.cores_orchestrator_neural_net, 'model_{i}.pt')
 
                 # self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
                 # if i == 20:
