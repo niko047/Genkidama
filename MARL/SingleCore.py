@@ -178,6 +178,8 @@ class SingleCoreProcess(mp.Process):
         print(f'=> Ending the ACK with ADDRESS: {self.address}')
         print(f"########## INITIALIZATION OF NODE DONE, STARTING COMPUTATIONS ##########")
 
+        # self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+
 
     def push_gradients_to_orchestrator(self):
         """Push the accumulated gradients from the single core to the orchestrator"""
@@ -189,10 +191,7 @@ class SingleCoreProcess(mp.Process):
 
     def pull_parameters_to_single_core(self):
         """Takes the parameter of the orchestrator net and with those replaces the single net parameters"""
-        orchestrator_params = parameters_to_vector(self.cores_orchestrator_neural_net.parameters())
-        vector_to_parameters(
-            orchestrator_params, self.single_core_neural_net.parameters()
-        )
+        self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
     def run(self):
         """Main function, starts the whole process, the underlying algorithm is this function itself"""
@@ -219,7 +218,7 @@ class SingleCoreProcess(mp.Process):
                     temporary_buffer_idx += 1
 
                     # TODO - Every once in a while, define better this condition
-                    if (j + 1) % self.batch_size == 0:
+                    if (j + 1) % self.batch_size == 0 or done:
                         # Resets the index of the temporary buffer because we are about to reset the buffer itself
                         temporary_buffer_idx = 0
 
@@ -272,7 +271,7 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % (self.batch_size*2) == 0:
+                    if (j + 1) % (self.batch_size*2) == 0 or done:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 

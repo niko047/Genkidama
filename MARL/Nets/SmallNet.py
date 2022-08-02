@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .general_network import GeneralNeuralNet
+import torch
 
 class SmallNet(nn.Module, GeneralNeuralNet):
     def __init__(self, s_dim, a_dim):
@@ -48,6 +49,7 @@ class SmallNet(nn.Module, GeneralNeuralNet):
 
     @staticmethod
     def set_init(layers):
+        torch.manual_seed(0)
         for layer in layers:
             nn.init.normal_(layer.weight, mean=0., std=0.1)
             nn.init.constant_(layer.bias, 0.)
