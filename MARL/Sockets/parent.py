@@ -86,8 +86,8 @@ class Parent(GeneralSocket):
             #print(f'[PARENT] Sending old weights at iteration {interaction_count} to {self.address}')
 
                 # Sending a copy of the global net parameters to the child
-                # current_encoded_weights = self.neural_net.encode_parameters()
-                # parent.send(current_encoded_weights)
+            current_encoded_weights = self.neural_net.encode_parameters()
+            parent.send(current_encoded_weights)
 
             # Receiving the new weights coming from the child
             new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,
