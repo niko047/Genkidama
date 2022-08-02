@@ -1,4 +1,5 @@
 import torch.multiprocessing as mp
+import random
 import pandas as pd
 import numpy as np
 from MARL.ReplayBuffer.buffer import ReplayBuffers
@@ -109,8 +110,13 @@ class SingleCoreProcess(mp.Process):
         # Transforms the numpy array state into a tensor object of float32
         state_tensor = torch.Tensor(state).to(torch.float32)
 
-        # Choose an action using the network, using the current state as input
-        action_chosen = self.single_core_neural_net.choose_action(state_tensor)
+        # Implementation of an epsilon greedy strategy
+        epsilon = 0.01
+        if random.random() < epsilon :
+            action_chosen = random.choice(list(range(4))) # Change this to be the list of actions
+        else :
+            # Choose an action using the network, using the current state as input
+            action_chosen = self.single_core_neural_net.choose_action(state_tensor)
 
         # Prepares a tensor containing all the objects above
         tensor_sar = torch.Tensor(np.array([*state, action_chosen, 0]))
@@ -213,7 +219,7 @@ class SingleCoreProcess(mp.Process):
                     temporary_buffer_idx += 1
 
                     # TODO - Every once in a while, define better this condition
-                    if (j + 1) % 5 == 0:
+                    if (j + 1) % self.batch_size == 0:
                         # Resets the index of the temporary buffer because we are about to reset the buffer itself
                         temporary_buffer_idx = 0
 
@@ -266,7 +272,7 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
-                    if (j + 1) % 15 == 0:
+                    if (j + 1) % (self.batch_size*2) == 0:
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
@@ -280,7 +286,6 @@ class SingleCoreProcess(mp.Process):
 
             # Every 50 episodes
             if i % 50 == 0 and i:
-                pass
                 # Save episode rewards
                 results_path = f'runs/A4C/core_{self.cpu_id}_history.csv'
                 df_res = pd.DataFrame({'rewards': self.results})

@@ -45,19 +45,19 @@ shared_opt_kwargs = {
     "weight_decay": .001,
 }
 
-batch_size = 5
-num_iters = 5
+batch_size = 120
+num_iters = 120
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 3000
+num_episodes = 2500
 num_steps = 2000
 
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function
 alpha = 1
-gamma=.99
+gamma=.999
 
 
 def start_child():

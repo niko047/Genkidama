@@ -102,11 +102,11 @@ class Parent(GeneralSocket):
                 self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.7)
             
             # Simple count of the number of interactions
             interaction_count += 1
-            if interaction_count % 50 == 0:
+            if interaction_count % 100 == 0:
                 if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
                     torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
