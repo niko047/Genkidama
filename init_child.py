@@ -40,13 +40,13 @@ len_reward = 1
 
 shared_optimizer = SGD # TODO - Change it to adam
 shared_opt_kwargs = {
-    "lr": 2e-4,
+    "lr": 1e-4,
     "momentum": 0.9,
     "weight_decay": .001,
 }
 
-batch_size = 5
-num_iters = 5
+batch_size = 120
+num_iters = 120
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%

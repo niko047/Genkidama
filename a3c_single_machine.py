@@ -217,7 +217,7 @@ if __name__ == '__main__':
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
     procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, res_queue)) for i in
-             range(NUM_CPUS)]
+             range(4)]
 
     [p.start() for p in procs]
 
