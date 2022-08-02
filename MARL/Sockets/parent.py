@@ -107,8 +107,8 @@ class Parent(GeneralSocket):
             # Simple count of the number of interactions
             interaction_count += 1
             if interaction_count % 50 == 0:
-                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Test'):
-                    torch.save(self.neural_net, f'Test/lunar_lander_a4c_{interaction_count}.pt')
+                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
+                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""

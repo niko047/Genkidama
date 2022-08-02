@@ -38,10 +38,11 @@ len_actions = env.action_space.n
 len_reward = 1
 
 
-shared_optimizer = SGD
+shared_optimizer = SGD # TODO - Change it to adam
 shared_opt_kwargs = {
     "lr": 1e-4,
-    "momentum": 0.9
+    "momentum": 0.9,
+    "weight_decay": .001,
 }
 
 batch_size = 5

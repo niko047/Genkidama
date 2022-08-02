@@ -3,9 +3,10 @@ import torch.multiprocessing as mp
 import gym
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 from MARL.Nets.SmallNet import SmallNet
 import matplotlib.pyplot as plt
+import random
 import pandas as pd
 
 mp.set_start_method('spawn', force=True)
@@ -14,18 +15,37 @@ len_state = 8
 len_actions = 4
 len_reward = 1
 
-LEN_ITERATIONS: int = 5
+LEN_ITERATIONS: int = 120
 NUM_CPUS: int = mp.cpu_count()
-NUM_EPISODES: int = 500
+NUM_EPISODES: int = 2000 # Try increasing this to 2000+
 NUM_STEPS: int = 2000
-BATCH_SIZE: int = 5
+BATCH_SIZE: int = 120
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .99
+GAMMA = .999
 
 env = gym.make('LunarLander-v2')
 
+import torch
 
+
+class SharedAdam(torch.optim.Adam):
+    def __init__(self, params, lr=1e-4, betas=(0.9, 0.99), eps=1e-8,
+                 weight_decay=0):
+        super(SharedAdam, self).__init__(params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
+        # State initialization
+        for group in self.param_groups:
+            for p in group['params']:
+                state = self.state[p]
+                state['step'] = 0
+                state['exp_avg'] = torch.zeros_like(p.data)
+                state['exp_avg_sq'] = torch.zeros_like(p.data)
+
+                # share in memory
+                state['exp_avg'].share_memory_()
+                state['exp_avg_sq'].share_memory_()
+
+epsilon_equation = lambda x:  max(0.4979167 - 0.001020833*x + 4.464286e-7*(x**2), 0)
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = SmallNet(s_dim=len_state, a_dim=len_actions)
 
@@ -58,7 +78,12 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
             state_tensor = torch.Tensor(state).to(torch.float32)
 
             # Choose an action using the network, using the current state as input
-            action_chosen = loc_net.choose_action(state_tensor)
+            
+            if random.random() < 0.01:
+                action_chosen = random.choice(list(range(len_actions)))
+
+            else:
+                action_chosen = loc_net.choose_action(state_tensor)
 
             # Prepares a list containing all the objects above
             tensor_tuple = torch.Tensor([*state, action_chosen, 0])
@@ -146,16 +171,21 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
                 temporary_buffer = torch.zeros(size=(LEN_ITERATIONS, len_state + 2))
                 temporary_buffer_idx = 0
 
-            if (j + 1) % 15 == 0 or done:
+            if (j + 1) % (BATCH_SIZE*2) == 0 or done:
+
                 # Loads the state dict locally after the global optimization step
                 loc_net.load_state_dict(glob_net.state_dict())
+
                 print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
 
             j += 1
 
             if done:
                 rewards_list.append(cum_reward)
+                # print(f'EPISODE {i} STEP {j + 1} -> CumReward for cpu {b.cpu_id} is: {cum_reward}')
                 break
+
+        # loc_net.load_state_dict(glob_net.state_dict())
 
     plt.plot(range(NUM_EPISODES), rewards_list)
     results_path = f'runs/A3C/{cpu_id}_history.csv'
@@ -171,8 +201,8 @@ if __name__ == '__main__':
     glob_net = SmallNet(a_dim=len_actions, s_dim=len_state)
     glob_net.share_memory()
 
-    # opt = SharedAdam(glob_net.parameters(), lr=1e-3, betas=(0.92, 0.999))  # global optimizer
-    opt = SGD(glob_net.parameters(), lr= 1e-4, momentum=0.9)
+    # opt = SharedAdam(glob_net.parameters(), lr=3e-4, betas=(0.92, 0.999))  # global optimizer
+    opt = SGD(glob_net.parameters(), lr= 1e-4, momentum=0.9, weight_decay=.001)
 
     # Queue used to store the history of rewards while training
     res_queue = mp.Queue()
@@ -203,7 +233,7 @@ if __name__ == '__main__':
     [p.join() for p in procs]
 
     # Code for plotting the rewards
-    torch.save(glob_net, 'lunar_lander.pt')
+    torch.save(glob_net, 'SolvedLunarLander/2k_steps/lunar_lander_a3c_1500_solved.pt')
 
     plt.plot(res)
     plt.ylabel('Reward')

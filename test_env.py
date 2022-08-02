@@ -3,40 +3,41 @@ import gym
 import matplotlib.pyplot as plt
 import os
 
+# os.chdir('Tests')
+'''
+2000 steps -> 150 MoR
+'''
 
-env = gym.make("LunarLander-v2")
-model = torch.load('lunar_lander_a4c_600.pt')
-num_episodes = 500
+for file in os.listdir():
+    if not file.endswith('.pt'):
+        continue
+    env = gym.make("LunarLander-v2")
+    model = torch.load(file)
+    num_episodes = 500
 
-rewards = []
+    rewards = []
 
-for j in range(num_episodes):
-    if j % 20 == 0:
-        print(j)
-    state = env.reset()
-    episode_reward = 0
-    done = False
-    while not done:
-        action = model.choose_action(torch.Tensor(state))
-        state, r, done, _ = env.step(action)
-        episode_reward += r
-    rewards.append(episode_reward)
+    for j in range(num_episodes):
+        if j % 20 == 0 and j:
+            print(j)
+            print(f'Current mean of rewards is {round(sum(rewards)/len(rewards),2)}')
+        state = env.reset()
+        episode_reward = 0
+        done = False
+        while not done:
+            action = model.choose_action(torch.Tensor(state))
+            state, r, done, _ = env.step(action)
+            env.render()
 
-plt.hist(rewards, bins=100)
-path = 'runs'
-os.chdir('runs')
-files = os.listdir()
-filename = 'lunar_lander_a4c_600'
+            episode_reward += r
+            print(f'{state[:]}')
+            # print(f'Current episode reward: {episode_reward}')
+        rewards.append(episode_reward)
 
+    plt.hist(rewards, bins=100)
 
-# if not files:
-#     filename = 'run_1'
-# else:
-#     run_n = max([int(a[a.find('_')+1:-4]) for a in files]) + 1
-#     filename = f'run_{run_n}'
-
-plt.savefig(filename)
-plt.show()
+    plt.savefig(file[:-3])
+    plt.show()
 
 
 

@@ -28,6 +28,8 @@ class SmallNet(nn.Module, GeneralNeuralNet):
         logits, _ = self.forward(s)
         prob = F.softmax(logits, dim=0).data
         m = self.distribution(prob)
+        #if self.epsilon_greedy:
+
         return m.sample().numpy()
 
     def loss_func(self, s, a, v_t):
