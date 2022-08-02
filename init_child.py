@@ -45,8 +45,8 @@ shared_opt_kwargs = {
     "weight_decay": .001,
 }
 
-batch_size = 100
-num_iters = 100
+batch_size = 5
+num_iters = 5
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
