@@ -292,11 +292,11 @@ class SingleCoreProcess(mp.Process):
 
 
             # Update here the local network sending the updates
-            if self.is_designated_core:
-                # Wait until all the other cpus have finished their episode
-                while not torch.all(
-                        torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
-                    pass
+            # if self.is_designated_core:
+            #     # Wait until all the other cpus have finished their episode
+            #     while not torch.all(
+            #             torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
+            #         pass
                 #
                 #
                 # new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
@@ -317,13 +317,13 @@ class SingleCoreProcess(mp.Process):
                 # self.cores_waiting_semaphor[1:] = False
 
             # Sleeping pill for all cores except the designated one
-            else:
-                self.cores_waiting_semaphor[self.cpu_id] = True
-                while self.cores_waiting_semaphor[self.cpu_id]:
-                    pass
-
-            # Pull parameters from orchestrator to each single node
-            self.pull_parameters_to_single_core()
+            # else:
+            #     self.cores_waiting_semaphor[self.cpu_id] = True
+            #     while self.cores_waiting_semaphor[self.cpu_id]:
+            #         pass
+            #
+            # # Pull parameters from orchestrator to each single node
+            # self.pull_parameters_to_single_core()
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
