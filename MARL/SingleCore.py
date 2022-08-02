@@ -297,28 +297,24 @@ class SingleCoreProcess(mp.Process):
                 while not torch.all(
                         torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
                     pass
-
-                # self.storage.append(parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach().numpy())
-                # if i == 20:
-                #     df = pd.DataFrame(np.array(self.storage))
-                #     df.to_csv('results.csv')
-
-                new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
-                # Sends the new weights over the network to the parent
-                # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-                self.socket_connection.send(new_weights_bytes)
-
-                # Wait for weights to be received
-                recv_weights_bytes = b''
-                while len(recv_weights_bytes) < self.len_msg_bytes:
-                    recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
-
-                # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
-                # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-
-                # Wake up the other cpu cores that were sleeping
-                self.cores_waiting_semaphor[1:] = False
+                #
+                #
+                # new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
+                # # Sends the new weights over the network to the parent
+                # # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                # self.socket_connection.send(new_weights_bytes)
+                #
+                # # Wait for weights to be received
+                # recv_weights_bytes = b''
+                # while len(recv_weights_bytes) < self.len_msg_bytes:
+                #     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
+                #
+                # # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
+                # self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+                # # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                #
+                # # Wake up the other cpu cores that were sleeping
+                # self.cores_waiting_semaphor[1:] = False
 
             # Sleeping pill for all cores except the designated one
             else:
