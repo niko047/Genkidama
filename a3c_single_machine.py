@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 
+
+torch.manual_seed(0)
+
 mp.set_start_method('spawn', force=True)
 
 len_state = 8
@@ -29,23 +32,6 @@ env = gym.make('LunarLander-v2')
 import torch
 
 
-class SharedAdam(torch.optim.Adam):
-    def __init__(self, params, lr=1e-4, betas=(0.9, 0.99), eps=1e-8,
-                 weight_decay=0):
-        super(SharedAdam, self).__init__(params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
-        # State initialization
-        for group in self.param_groups:
-            for p in group['params']:
-                state = self.state[p]
-                state['step'] = 0
-                state['exp_avg'] = torch.zeros_like(p.data)
-                state['exp_avg_sq'] = torch.zeros_like(p.data)
-
-                # share in memory
-                state['exp_avg'].share_memory_()
-                state['exp_avg_sq'].share_memory_()
-
-epsilon_equation = lambda x:  max(0.4979167 - 0.001020833*x + 4.464286e-7*(x**2), 0)
 def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
     loc_net = SmallNet(s_dim=len_state, a_dim=len_actions)
 
