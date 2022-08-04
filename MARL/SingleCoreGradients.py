@@ -9,6 +9,7 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from torch.optim import SGD
 
 
 """
@@ -61,7 +62,24 @@ class SingleCoreProcess(mp.Process):
         self.starting_semaphor = starting_semaphor
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
-        self.optimizer = optimizer
+        self.orchestrator_optimizer = optimizer
+        self.core_optimizer = SGD(self.single_core_neural_net.parameters(), lr=1e-4, momentum=.9, weight_decay=.001)
+
+        # Get len_gradient_bytes
+        fake_state = torch.ones((2, 8))
+        fake_actions = torch.Tensor([1, 0])
+        fake_rewards = torch.Tensor([1, 0])
+        loss = self.single_core_neural_net.loss_func(fake_state, fake_actions, fake_rewards)
+        loss.backward()
+        encoded_gradients = self.single_core_neural_net.encode_gradients()
+        self.len_gradient_bytes = len(encoded_gradients)
+        self.end_msg = b' ' * self.len_gradient_bytes
+
+        # Reset what has been done above
+        self.core_optimizer.zero_grad()
+
+
+
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -187,16 +205,30 @@ class SingleCoreProcess(mp.Process):
                 self.single_core_neural_net.parameters(),
                 self.cores_orchestrator_neural_net.parameters()
         )):
-            gp._grad = lp.grad
+            gp.grad += lp.grad
 
-    def pull_parameters_to_single_core(self):
-        """Takes the parameter of the orchestrator net and with those replaces the single net parameters"""
-        self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+    # def pull_parameters_to_single_core(self):
+    #     """Takes the parameter of the orchestrator net and with those replaces the single net parameters"""
+    #     self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
+
+    def initialize_gradients_orchestrator(self):
+        # Get len_gradient_bytes
+        fake_state = torch.ones((2, 8))
+        fake_actions = torch.Tensor([1, 0])
+        fake_rewards = torch.Tensor([1, 0])
+        loss = self.cores_orchestrator_neural_net.loss_func(fake_state, fake_actions, fake_rewards)
+        # Populates the gradients which were previously null
+        loss.backward()
+
+        # Zeros out the gradients, which though keep their tensor shape
+        self.orchestrator_optimizer.zero_grad()
+
 
     def run(self):
         """Main function, starts the whole process, the underlying algorithm is this function itself"""
         if self.is_designated_core:
             self.designated_core_handshake()
+            self.initialize_gradients_orchestrator()
 
         for i in range(self.num_episodes):
             # Creates temporary buffer and resets the environment
@@ -246,35 +278,15 @@ class SingleCoreProcess(mp.Process):
                         )
 
                         # Zeroes the gradients out
-                        self.optimizer.zero_grad()
+                        self.core_optimizer.zero_grad()
                         # Performs calculation of the backward pass
                         loss.backward()
 
-                        # Pushes the gradients accumulated from core to the orchestrator net
+                        # Accumulates the gradients accumulated from core to the orchestrator net
                         self.push_gradients_to_orchestrator()
-
-                        # pre_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
-                        # Performs backprop
-                        self.optimizer.step()
-
-                        # post_backprop = parameters_to_vector(self.cores_orchestrator_neural_net.parameters()).detach()
-
-                        # print(f'Backprop change: {(post_backprop.abs() - pre_backprop.abs()).sum()}')
-                        #if self.cpu_id == 1:
-                        #    self.storage_running.append(post_backprop.numpy())
-                        #    if i == 20:
-                        #        df = pd.DataFrame(np.array(self.storage_running))
-                        #        df.to_csv('results_running.csv')
-
 
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
-
-                    if (j + 1) % (self.batch_size*2) == 0 or done:
-                        # Syncs the parameter of this cpu core to the one of the orchestrator
-                        self.pull_parameters_to_single_core()
-
-                        # TODO - Maybe add a connection here to send the parameters to the central node and test it
 
                     if done:
                         break
@@ -304,10 +316,10 @@ class SingleCoreProcess(mp.Process):
                     pass
 
 
-                new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
+                new_gradient_bytes = self.cores_orchestrator_neural_net.encode_gradients()
                 # Sends the new weights over the network to the parent
                 # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-                self.socket_connection.send(new_weights_bytes)
+                self.socket_connection.send(new_gradient_bytes)
 
                 # Wait for weights to be received
                 recv_weights_bytes = b''
@@ -315,7 +327,9 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.5)
+                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes)
+
+                self.orchestrator_optimizer.zero_grad()
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 # Wake up the other cpu cores that were sleeping
@@ -335,10 +349,6 @@ class SingleCoreProcess(mp.Process):
 
         # The designated core can then close the connection with the parent
         if self.is_designated_core:
-            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.start_end_msg)
-
-        # Print here the results of the algorithm
-        # plt.plot(range(self.num_episodes), self.results)
-        # plt.waitforbuttonpress()
+            Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.end_msg)
 
         self.res_queue.put(None)

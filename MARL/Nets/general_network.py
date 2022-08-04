@@ -18,6 +18,14 @@ class GeneralNeuralNet(object):
         r = buff.read()
         return r
 
+    def encode_gradients(self) -> bytes:
+        buff = io.BytesIO()
+        gradients_array = [x.grad for x in self.parameters()]
+        torchsave(gradients_array, buff)
+        buff.seek(0)
+        r = buff.read()
+        return r
+
     def decode_implement_parameters(self, b: bytes, alpha: float):
         """Gets the encoded parameters of the networks in bytes, decodes them and pugs them into the net"""
         try:
@@ -31,6 +39,11 @@ class GeneralNeuralNet(object):
             # Alpha determines the learning contribute of each worker at each gradient sent
             flat_weighted_avg = (1-alpha) * flattened_old_params + alpha * flattened_new_params
             vector_to_parameters(flat_weighted_avg, self.parameters())
+
+    def decode_add_gradients(self, b:bytes):
+        array_incoming_gradients = torchload(io.BytesIO(b))
+        for i, p in enumerate(self.parameters()) :
+            p.grad += array_incoming_gradients[i]
 
     @staticmethod
     def initialize_layers(layers):
