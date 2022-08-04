@@ -10,7 +10,7 @@ import random
 import pandas as pd
 
 
-torch.manual_seed(0)
+torch.manual_seed(42)
 
 mp.set_start_method('spawn', force=True)
 
@@ -25,7 +25,7 @@ NUM_STEPS: int = 2000
 BATCH_SIZE: int = 120
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .999
+GAMMA = .95 # change it adding more 9
 
 env = gym.make('LunarLander-v2')
 
@@ -59,6 +59,10 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
         j = 0
         temporary_buffer_idx = 0
 
+        if cpu_id == 0 and (i+1)%100==0:
+            torch.save(glob_net, f'lunar_lander_{i}_99.pt')
+
+
         while not done:
             # Transforms the numpy array state into a tensor object of float32
             state_tensor = torch.Tensor(state).to(torch.float32)
@@ -77,18 +81,16 @@ def train_model(glob_net, opt, buffer, cpu_id, semaphor, res_queue):
             # Note that this state is the next one observed, it will be used in the next iteration
             state, reward, done, _ = env.step(action_chosen)
 
-            if not done:
+            # Adds the reward experienced to the current episode reward
+            cum_reward += reward
 
-                # Adds the reward experienced to the current episode reward
-                cum_reward += reward
+            # Adds the reward and a placeholder for the discounted reward to be calculated
+            tensor_tuple[-1] = reward
 
-                # Adds the reward and a placeholder for the discounted reward to be calculated
-                tensor_tuple[-1] = reward
+            # Appends (state, action, reward, reward_observed) tensor object
+            temporary_buffer[temporary_buffer_idx, :] = tensor_tuple
 
-                # Appends (state, action, reward, reward_observed) tensor object
-                temporary_buffer[temporary_buffer_idx, :] = tensor_tuple
-
-                temporary_buffer_idx += 1
+            temporary_buffer_idx += 1
 
             # Every once in a while
             if (j + 1) % BATCH_SIZE == 0 or done:
@@ -203,7 +205,7 @@ if __name__ == '__main__':
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
     procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, res_queue)) for i in
-             range(4)]
+             range(NUM_CPUS)]
 
     [p.start() for p in procs]
 
@@ -219,7 +221,7 @@ if __name__ == '__main__':
     [p.join() for p in procs]
 
     # Code for plotting the rewards
-    torch.save(glob_net, 'SolvedLunarLander/2k_steps/lunar_lander_a3c_1500_solved.pt')
+
 
     plt.plot(res)
     plt.ylabel('Reward')

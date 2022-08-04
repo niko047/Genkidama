@@ -97,12 +97,12 @@ class Parent(GeneralSocket):
             if new_weights_bytes == start_end_msg:
                 break
 
-            with torch.no_grad():
-                flattened_new_params = torchload(io.BytesIO(new_weights_bytes))
-                self.storage_received.append(flattened_new_params.detach().numpy())
+            # with torch.no_grad():
+            #     flattened_new_params = torchload(io.BytesIO(new_weights_bytes))
+            #     self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=1)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.90)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)

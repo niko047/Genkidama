@@ -2,6 +2,7 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
 # os.chdir('Tests')
 '''
@@ -9,8 +10,9 @@ import os
 '''
 
 for file in os.listdir():
-    if not file.endswith('lunar_lander_1999_999.pt'):
+    if not file.endswith('.pt'):
         continue
+    print(file)
     env = gym.make("LunarLander-v2")
     model = torch.load(file)
     num_episodes = 500
@@ -34,10 +36,5 @@ for file in os.listdir():
             # print(f'Current episode reward: {episode_reward}')
         rewards.append(episode_reward)
 
-    plt.hist(rewards, bins=100)
-
-    plt.savefig(file[:-3])
-    plt.show()
-
-
-
+    df = pd.DataFrame(rewards)
+    df.to_csv(f'{file[:-3]}.csv', index=False)
