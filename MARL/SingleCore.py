@@ -275,6 +275,8 @@ class SingleCoreProcess(mp.Process):
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
+                        # TODO - Maybe add a connection here to send the parameters to the central node and test it
+
                     if done:
                         break
 
@@ -310,7 +312,7 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=1)
+                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.5)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 # Wake up the other cpu cores that were sleeping
