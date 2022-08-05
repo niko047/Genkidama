@@ -63,7 +63,6 @@ class SingleCoreProcess(mp.Process):
         self.cores_waiting_semaphor = cores_waiting_semaphor
         self.ending_semaphor = ending_semaphor
         self.orchestrator_optimizer = optimizer
-        self.core_optimizer = SGD(self.single_core_neural_net.parameters(), lr=1e-4, momentum=.9, weight_decay=.001)
 
         # Get len_gradient_bytes
         fake_state = torch.ones((2, 8))
@@ -75,8 +74,6 @@ class SingleCoreProcess(mp.Process):
         self.len_gradient_bytes = len(encoded_gradients)
         self.end_msg = b' ' * self.len_gradient_bytes
 
-        # Reset what has been done above
-        self.core_optimizer.zero_grad()
 
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
@@ -203,7 +200,7 @@ class SingleCoreProcess(mp.Process):
                 self.single_core_neural_net.parameters(),
                 self.cores_orchestrator_neural_net.parameters()
         )):
-            gp.grad += lp.grad
+            gp._grad += lp.grad
 
     # def pull_parameters_to_single_core(self):
     #     """Takes the parameter of the orchestrator net and with those replaces the single net parameters"""
@@ -215,7 +212,12 @@ class SingleCoreProcess(mp.Process):
                 self.single_core_neural_net.parameters(),
                 self.cores_orchestrator_neural_net.parameters()
         )):
-            gp.grad = lp.grad
+            gp._grad = lp.grad
+
+    def zero_out_core_gradients(self):
+
+        for lp in self.single_core_neural_net.parameters():
+            lp._grad = torch.zeros_like(torch.Tensor(lp.grad.shape))
 
     def run(self):
         """Main function, starts the whole process, the underlying algorithm is this function itself"""
@@ -263,6 +265,7 @@ class SingleCoreProcess(mp.Process):
                             temporary_buffer,
                             done
                         )
+
                         # Calculates the loss between target and predict
                         loss = self.single_core_neural_net.loss_func(
                             s=state_samples,
@@ -270,8 +273,6 @@ class SingleCoreProcess(mp.Process):
                             v_t=rewards_samples
                         )
 
-                        # Zeroes the gradients out
-                        self.core_optimizer.zero_grad()
                         # Performs calculation of the backward pass
                         loss.backward()
 
@@ -319,6 +320,9 @@ class SingleCoreProcess(mp.Process):
 
                         # Pull parameters from orchestrator to each single node
                         self.pull_parameters_to_single_core()
+
+                        # Zero out the current gradients
+                        self.zero_out_core_gradients()
 
                     if done:
                         break
