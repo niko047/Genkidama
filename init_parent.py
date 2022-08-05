@@ -27,11 +27,8 @@ print(f'ADDRESSES ARE {ADDRESSES}')
 
 def start_parent():
     net = SmallNet(s_dim=8, a_dim=4)
-    for idx, address in enumerate(ADDRESSES):
-        s = Parent(child_address=address, port=PORT, network_blueprint=net)
-        s.run()
-        print(f'Process number {idx} is running on {address}')
-    # torch.save(net, 'cart_pole_model_a4c.pt')
+    s = Parent(child_address=ADDRESSES, port=PORT, network_blueprint=net)
+    s.run()
 
 if __name__ == '__main__':
     start_parent()

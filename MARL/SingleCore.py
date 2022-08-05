@@ -275,8 +275,6 @@ class SingleCoreProcess(mp.Process):
                         # Syncs the parameter of this cpu core to the one of the orchestrator
                         self.pull_parameters_to_single_core()
 
-                        # TODO - Maybe add a connection here to send the parameters to the central node and test it
-
                     if done:
                         break
 

@@ -31,10 +31,10 @@ torch.set_printoptions(profile='full')
 
 class Parent(GeneralSocket):
 
-    def __init__(self, child_address, port, network_blueprint):
+    def __init__(self, addresses, port, network_blueprint):
         super().__init__(port=port)
 
-        self.address = child_address
+        self.addresses = addresses
         self.neural_net = network_blueprint
 
         self.rewards = []
@@ -102,7 +102,7 @@ class Parent(GeneralSocket):
             #     self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.6)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
@@ -113,9 +113,9 @@ class Parent(GeneralSocket):
                 if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
                     torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
-    def handle_client(self):
+    def handle_client(self, addr):
         """Handles the worker, all the functionality is inside here"""
-        self.parent_init(address=self.address, port=self.port)
+        self.parent_init(address=addr, port=self.port)
 
         with self.parent as parent:
             # Gets some starting information to initialize the connection
@@ -129,8 +129,9 @@ class Parent(GeneralSocket):
             parent.close()
 
     def run(self):
-        t = threading.Thread(target=self.handle_client, args=())
-        t.start()
+        for addr in self.addresses:
+            t = threading.Thread(target=self.handle_client, args=(addr))
+            t.start()
         # print(self.rewards)
 
 
