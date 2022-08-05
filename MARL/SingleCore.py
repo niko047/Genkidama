@@ -78,8 +78,6 @@ class SingleCoreProcess(mp.Process):
         # Reset what has been done above
         self.core_optimizer.zero_grad()
 
-
-
         self.b = ReplayBuffers(
             shared_replay_buffer=buffer,
             cpu_id=cpu_id,
@@ -287,6 +285,45 @@ class SingleCoreProcess(mp.Process):
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
 
+                    if (i+1) % (self.batch_size*2) == 0 or done:
+                        if self.is_designated_core:
+                            # Wait until all the other cpus have finished their episode
+                            # if i % 100 == 0 and i :
+                            #     # Save torch weights
+                            #     torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_{i}.pt')
+
+                            while not torch.all(
+                                    torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
+                                pass
+
+                            new_gradient_bytes = self.cores_orchestrator_neural_net.encode_gradients()
+                            # Sends the new weights over the network to the parent
+                            # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                            self.socket_connection.send(new_gradient_bytes)
+
+                            # Wait for weights to be received
+                            recv_weights_bytes = b''
+                            while len(recv_weights_bytes) < self.len_msg_bytes:
+                                recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
+
+                            # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
+                            self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes)
+
+                            self.orchestrator_optimizer.zero_grad()
+                            # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+
+                            # Wake up the other cpu cores that were sleeping
+                            self.cores_waiting_semaphor[1:] = False
+
+                        # Sleeping pill for all cores except the designated one
+                        else:
+                            self.cores_waiting_semaphor[self.cpu_id] = True
+                            while self.cores_waiting_semaphor[self.cpu_id]:
+                                pass
+
+                        # Pull parameters from orchestrator to each single node
+                        self.pull_parameters_to_single_core()
+
                     if done:
                         break
 
@@ -296,58 +333,22 @@ class SingleCoreProcess(mp.Process):
             print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
-            # if i % 100 == 0 and i:
-            #     # Save episode rewards
-            #     results_path = f'runs/A4C/core_{self.cpu_id}_history.csv'
-            #     df_res = pd.DataFrame({'rewards': self.results})
-            #     df_res.to_csv(results_path)
+            if i % 100 == 0 and i:
+                # Save episode rewards
+                results_path = f'runs/A4C/core_{self.cpu_id}_history.csv'
+                df_res = pd.DataFrame({'rewards': self.results})
+                df_res.to_csv(results_path)
 
 
             # Update here the local network sending the updates
-            if self.is_designated_core:
-                # Wait until all the other cpus have finished their episode
-                # if i % 100 == 0 and i :
-                #     # Save torch weights
-                #     torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_{i}.pt')
-
-                while not torch.all(
-                        torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
-                    pass
-
-
-                new_gradient_bytes = self.cores_orchestrator_neural_net.encode_gradients()
-                # Sends the new weights over the network to the parent
-                # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-                self.socket_connection.send(new_gradient_bytes)
-
-                # Wait for weights to be received
-                recv_weights_bytes = b''
-                while len(recv_weights_bytes) < self.len_msg_bytes:
-                    recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
-
-                # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes)
-
-                self.orchestrator_optimizer.zero_grad()
-                # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
-
-                # Wake up the other cpu cores that were sleeping
-                self.cores_waiting_semaphor[1:] = False
-
-            # Sleeping pill for all cores except the designated one
-            else:
-                self.cores_waiting_semaphor[self.cpu_id] = True
-                while self.cores_waiting_semaphor[self.cpu_id]:
-                    pass
-
-            # Pull parameters from orchestrator to each single node
-            self.pull_parameters_to_single_core()
 
         # Writes down that this cpu core has finished its job
         self.ending_semaphor[self.cpu_id] = True
 
         # The designated core can then close the connection with the parent
         if self.is_designated_core:
+            torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_genkidama.pt')
+
             Client.close_connection(conn_to_parent=self.socket_connection, start_end_msg=self.end_msg)
 
         self.res_queue.put(None)

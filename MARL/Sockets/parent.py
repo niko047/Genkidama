@@ -106,8 +106,6 @@ class Parent(GeneralSocket):
                 # Check the length of the gradients because it is what it will be waiting for
                 gradient_length = self.get_gradients_length()
 
-            self.optimizer.zero_grad()
-
             # Receiving the new weights coming from the child
             new_gradients_bytes = GeneralSocket.wait_msg_received(len_true_msg=gradient_length,
                                                                 gsocket=parent)
@@ -120,6 +118,8 @@ class Parent(GeneralSocket):
             #     flattened_new_params = torchload(io.BytesIO(new_weights_bytes))
             #     self.storage_received.append(flattened_new_params.detach().numpy())
 
+            self.optimizer.zero_grad()
+
             # Upload the new weights to the network
             self.neural_net.decode_add_gradients(b=new_gradients_bytes)
 
@@ -131,9 +131,9 @@ class Parent(GeneralSocket):
 
             # Simple count of the number of interactions
             interaction_count += 1
-            # if interaction_count % 100 == 0:
-            #     if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
-            #         torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
+            if interaction_count % 100 == 0:
+                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
+                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
     def handle_client(self):
         """Handles the worker, all the functionality is inside here"""
