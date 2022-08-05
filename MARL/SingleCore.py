@@ -329,7 +329,7 @@ class SingleCoreProcess(mp.Process):
 
             # Appends the current reward to the list of rewards
             self.results.append(ep_reward)
-                print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
+            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
             if i % 100 == 0 and i:
