@@ -49,7 +49,8 @@ class SingleCoreProcess(mp.Process):
                  num_steps,
                  socket_connection,
                  address,
-                 gamma
+                 gamma,
+                 ep_rand_designated_core
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net(s_dim=8, a_dim=4) # TODO - pass these as params
@@ -90,6 +91,8 @@ class SingleCoreProcess(mp.Process):
 
         self.gamma = gamma
         self.start_end_msg = None
+
+        self.ep_rand_designated_core = ep_rand_designated_core
 
         self.results = []
         self.cum_grads_list = []
@@ -202,6 +205,7 @@ class SingleCoreProcess(mp.Process):
             # Creates temporary buffer and resets the environment
             temporary_buffer, temporary_buffer_idx, state, ep_reward = self.reset_environment()
             done = False
+
             for j in range(self.num_steps):
 
                 # if not self.is_designated_core:
@@ -292,14 +296,25 @@ class SingleCoreProcess(mp.Process):
 
 
             # Update here the local network sending the updates
-            if self.is_designated_core:
+            if self.cpu_id == self.ep_rand_designated_core:
+                print(f'CORE ID {self.cpu_id} IS THE DESIGNATED UPDATOR')
                 # Wait until all the other cpus have finished their episode
-                if i % 100 == 0 and i :
+                if i % 100 == 0 and i:
                     # Save torch weights
                     torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_{i}.pt')
 
                 while not torch.all(
-                        torch.logical_or(self.cores_waiting_semaphor[1:], self.ending_semaphor[1:])):
+                        # torch.logical_or(
+                        #     self.cores_waiting_semaphor[1:],
+                        #     self.ending_semaphor[1:]
+                        # )
+                    torch.logical_or(
+                        torch.cat((self.cores_waiting_semaphor[:int(self.ep_rand_designated_core)]
+                                   , self.cores_waiting_semaphor[int(self.ep_rand_designated_core) + 1:])),
+                        torch.cat((self.ending_semaphor[:int(self.ep_rand_designated_core)]
+                                   , self.ending_semaphor[int(self.ep_rand_designated_core) + 1:]))
+                    )
+                ):
                     pass
 
 
@@ -314,11 +329,16 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.5)
+                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
+                self.ep_rand_designated_core[:] = random.choice(list(range(self.tot_num_active_cpus)))
+
                 # Wake up the other cpu cores that were sleeping
-                self.cores_waiting_semaphor[1:] = False
+                self.cores_waiting_semaphor[:] = False
+
+
+
 
             # Sleeping pill for all cores except the designated one
             else:

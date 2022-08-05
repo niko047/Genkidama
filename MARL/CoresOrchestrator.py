@@ -84,6 +84,9 @@ class CoresOrchestrator(object):
         cores_waiting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
         ending_semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
+        ep_rand_designated_core = torch.Tensor([1])
+        ep_rand_designated_core.share_memory_()
+
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
@@ -110,7 +113,8 @@ class CoresOrchestrator(object):
             num_steps=self.num_steps,
             socket_connection=conn,
             address=addr,
-            gamma=self.gamma
+            gamma=self.gamma,
+            ep_rand_designated_core=ep_rand_designated_core
         ) for cpu_id in
             range(self.n_available_cores)]
 

@@ -49,7 +49,7 @@ class Parent(GeneralSocket):
     def parent_init(self, address, port, pid):
 
         self.connections[pid] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connections[pid.connect((address, port))]
+        self.connections[pid].connect((address, port))
 
         # self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.parent.connect((address, port))
