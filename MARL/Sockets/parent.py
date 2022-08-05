@@ -18,6 +18,7 @@ import os
 import io
 import numpy as np
 import socket
+import os
 
 import pandas as pd
 
@@ -41,11 +42,17 @@ class Parent(GeneralSocket):
         self.storage_current = []
         self.storage_received = []
 
+        self.connections = [0 for i in range(len(addresses))]
 
 
-    def parent_init(self, address, port):
-        self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.parent.connect((address, port))
+
+    def parent_init(self, address, port, pid):
+
+        self.connections[pid] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connections[pid.connect((address, port))]
+
+        # self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.parent.connect((address, port))
 
     def get_start_end_msg(self):
         encoded_params = self.neural_net.encode_parameters()
@@ -109,15 +116,15 @@ class Parent(GeneralSocket):
             
             # Simple count of the number of interactions
             interaction_count += 1
-            if interaction_count % 100 == 0:
-                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
-                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
+            # if interaction_count % 100 == 0:
+            #     if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
+            #         torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
-    def handle_client(self, addr):
+    def handle_client(self, addr, pid):
         """Handles the worker, all the functionality is inside here"""
-        self.parent_init(address=addr, port=self.port)
+        self.parent_init(address=addr, port=self.port, pid=pid)
 
-        with self.parent as parent:
+        with self.connections[pid] as parent:
             # Gets some starting information to initialize the connection
             len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
 
@@ -129,8 +136,8 @@ class Parent(GeneralSocket):
             parent.close()
 
     def run(self):
-        for addr in self.addresses:
-            t = threading.Thread(target=self.handle_client, args=(addr))
+        for i, addr in enumerate(self.addresses):
+            t = threading.Thread(target=self.handle_client, args=(addr, i,))
             t.start()
         # print(self.rewards)
 

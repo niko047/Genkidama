@@ -24,6 +24,7 @@ args = my_parser.parse_args()
 PORT = args.port
 ADDRESSES = args.ipaddress
 print(f'ADDRESSES ARE {ADDRESSES}')
+print(len(ADDRESSES))
 
 def start_parent():
     net = SmallNet(s_dim=8, a_dim=4)
