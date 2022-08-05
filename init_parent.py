@@ -27,7 +27,7 @@ print(f'ADDRESSES ARE {ADDRESSES}')
 
 def start_parent():
     net = SmallNet(s_dim=8, a_dim=4)
-    s = Parent(child_address=ADDRESSES, port=PORT, network_blueprint=net)
+    s = Parent(addresses=ADDRESSES, port=PORT, network_blueprint=net)
     s.run()
 
 if __name__ == '__main__':
