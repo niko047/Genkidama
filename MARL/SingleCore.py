@@ -280,7 +280,8 @@ class SingleCoreProcess(mp.Process):
                         loss.backward()
 
                         # Accumulates the gradients accumulated from core to the orchestrator net
-                        self.push_gradients_to_orchestrator()
+                        if not self.is_designated_core:
+                            self.push_gradients_to_orchestrator()
 
                         # Empties out the temporary buffer for the next 5 iterations
                         temporary_buffer = torch.zeros(size=(self.num_iters, self.len_state + 2))
