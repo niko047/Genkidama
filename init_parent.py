@@ -1,4 +1,4 @@
-from MARL.Sockets.parent_weights import Parent
+from MARL.Sockets.parent import Parent
 from timeit import default_timer as timer
 from MARL.Nets.SmallNet import SmallNet
 import argparse
