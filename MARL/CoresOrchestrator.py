@@ -87,6 +87,9 @@ class CoresOrchestrator(object):
         ep_rand_designated_core = torch.Tensor([1])
         ep_rand_designated_core.share_memory_()
 
+        old_weights_bytes = self.orchestrator_neural_net.encode_parameters()
+        len_msg_bytes = len(old_weights_bytes)
+
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
@@ -114,7 +117,8 @@ class CoresOrchestrator(object):
             socket_connection=conn,
             address=addr,
             gamma=self.gamma,
-            ep_rand_designated_core=ep_rand_designated_core
+            ep_rand_designated_core=ep_rand_designated_core,
+            len_msg_bytes = len_msg_bytes,
         ) for cpu_id in
             range(self.n_available_cores)]
 

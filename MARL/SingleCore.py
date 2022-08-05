@@ -50,7 +50,8 @@ class SingleCoreProcess(mp.Process):
                  socket_connection,
                  address,
                  gamma,
-                 ep_rand_designated_core
+                 ep_rand_designated_core,
+                 len_msg_bytes
                  ):
         super(SingleCoreProcess, self).__init__()
         self.single_core_neural_net = single_core_neural_net(s_dim=8, a_dim=4) # TODO - pass these as params
@@ -93,6 +94,10 @@ class SingleCoreProcess(mp.Process):
         self.start_end_msg = None
 
         self.ep_rand_designated_core = ep_rand_designated_core
+
+
+        self.len_msg_bytes = len_msg_bytes
+        self.start_end_msg = self.len_msg_bytes * b' '
 
         self.results = []
         self.cum_grads_list = []
@@ -159,25 +164,28 @@ class SingleCoreProcess(mp.Process):
 
     def designated_core_handshake(self):
         """Handshakes the parent checking for agreement"""
-        old_weights_bytes = self.single_core_neural_net.encode_parameters()
-        len_msg_bytes = len(old_weights_bytes)
-        self.len_msg_bytes = len_msg_bytes
+        # old_weights_bytes = self.single_core_neural_net.encode_parameters()
+        # len_msg_bytes = len(old_weights_bytes)
+        # self.len_msg_bytes = len_msg_bytes
         print(f"########## STARTING INITIALIZATION OF NODE, HANDSHAKING ##########")
-        print(f'=> Length of the weights is {len_msg_bytes} bytes.')
-        start_end_msg = b' ' * len_msg_bytes
-        self.start_end_msg = start_end_msg
+        print(f'=> Length of the weights is {self.len_msg_bytes} bytes.')
+        # start_end_msg = b' ' * len_msg_bytes
+        # self.start_end_msg = start_end_msg
+
+
+
         print(f'=> Starting the SYN with ADDRESS: {self.address}')
         Client.handshake(
             conn_to_parent=self.socket_connection,
             has_handshaked=False,
-            len_msg_bytes=len_msg_bytes,
-            start_end_msg=start_end_msg
+            len_msg_bytes=self.len_msg_bytes,
+            start_end_msg=self.start_end_msg
         )
         print(f'=> Ending the SYN with ADDRESS: {self.address}')
         print(f'=> Starting the ACK with ADDRESS: {self.address}')
         recv_weights_bytes = b''
-        while len(recv_weights_bytes) < len_msg_bytes:
-            recv_weights_bytes += self.socket_connection.recv(len_msg_bytes)
+        while len(recv_weights_bytes) < self.len_msg_bytes:
+            recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
         print(f'=> Ending the ACK with ADDRESS: {self.address}')
         print(f"########## INITIALIZATION OF NODE DONE, STARTING COMPUTATIONS ##########")
 
