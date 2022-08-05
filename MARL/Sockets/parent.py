@@ -109,16 +109,16 @@ class Parent(GeneralSocket):
             #     self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.6)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
             
             # Simple count of the number of interactions
             interaction_count += 1
-            # if interaction_count % 100 == 0:
-            #     if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
-            #         torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
+            if interaction_count % 100 == 0:
+                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
+                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
 
     def handle_client(self, addr, pid):
         """Handles the worker, all the functionality is inside here"""

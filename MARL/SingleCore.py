@@ -293,7 +293,8 @@ class SingleCoreProcess(mp.Process):
             # Appends the current reward to the list of rewards
             self.results.append(ep_reward)
 
-            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
+            if i%5==0:
+                print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
             if i % 100 == 0 and i:
@@ -305,7 +306,7 @@ class SingleCoreProcess(mp.Process):
 
             # Update here the local network sending the updates
             if self.cpu_id == self.ep_rand_designated_core:
-                print(f'CORE ID {self.cpu_id} IS THE DESIGNATED UPDATOR')
+                # print(f'CORE ID {self.cpu_id} IS THE DESIGNATED UPDATOR')
                 # Wait until all the other cpus have finished their episode
                 if i % 100 == 0 and i:
                     # Save torch weights
@@ -337,7 +338,7 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.7)
+                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.5)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 self.ep_rand_designated_core[:] = random.choice(list(range(self.tot_num_active_cpus)))
