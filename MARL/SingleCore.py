@@ -210,16 +210,12 @@ class SingleCoreProcess(mp.Process):
     #     self.single_core_neural_net.load_state_dict(self.cores_orchestrator_neural_net.state_dict())
 
     def initialize_gradients_orchestrator(self):
-        # Get len_gradient_bytes
-        fake_state = torch.ones((2, 8))
-        fake_actions = torch.Tensor([1, 0])
-        fake_rewards = torch.Tensor([1, 0])
-        loss = self.cores_orchestrator_neural_net.loss_func(fake_state, fake_actions, fake_rewards)
-        # Populates the gradients which were previously null
-        loss.backward()
 
-        # Zeros out the gradients, which though keep their tensor shape
-        self.orchestrator_optimizer.zero_grad()
+        for idx, (lp, gp) in enumerate(zip(
+                self.single_core_neural_net.parameters(),
+                self.cores_orchestrator_neural_net.parameters()
+        )):
+            gp.grad = lp.grad
 
     def run(self):
         """Main function, starts the whole process, the underlying algorithm is this function itself"""
