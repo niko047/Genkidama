@@ -2,7 +2,7 @@ import torch.multiprocessing as mp
 import torch
 import math
 
-from .SingleCore import SingleCoreProcess
+from .SingleCoreWeights import SingleCoreProcess
 from MARL.ReplayBuffer.buffer import ReplayBuffers
 from MARL.Manager.manager import Manager
 from MARL.Sockets.child import Client

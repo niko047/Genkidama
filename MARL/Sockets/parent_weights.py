@@ -26,10 +26,8 @@ import threading
 import gym
 import torch
 from torch.nn.utils import parameters_to_vector
-from torch.optim import SGD
 
 torch.set_printoptions(profile='full')
-
 
 class Parent(GeneralSocket):
 
@@ -38,11 +36,12 @@ class Parent(GeneralSocket):
 
         self.address = child_address
         self.neural_net = network_blueprint
-        self.optimizer = SGD(self.neural_net.parameters(), lr=1e-4, momentum=.9, weight_decay=.001)
 
         self.rewards = []
         self.storage_current = []
         self.storage_received = []
+
+
 
     def parent_init(self, address, port):
         self.parent = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -65,19 +64,6 @@ class Parent(GeneralSocket):
             handshake_msg += parent.recv(len_msg_bytes)
         return True
 
-    def get_gradients_length(self):
-        '''Retrieves the length in bytes of the gradients, uses it after handshake'''
-        fake_state = torch.ones((2,8))
-        fake_actions = torch.Tensor([1,0])
-        fake_rewards = torch.Tensor([1,0])
-        loss = self.neural_net.loss_func(fake_state, fake_actions, fake_rewards)
-        loss.backward()
-        encoded_gradients = self.neural_net.encode_gradients()
-
-        self.end_msg = b' ' * len(encoded_gradients)
-        return len(encoded_gradients)
-
-
     def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
         """Handles what's up until the connection is alive:
         - Handshake with the parent
@@ -97,23 +83,18 @@ class Parent(GeneralSocket):
             if not has_handshake_happened:
                 has_handshake_happened = self.check_handshake(parent, start_end_msg, len_msg_bytes)
 
-                # print(f'[PARENT] Sending old weights at iteration {interaction_count} to {self.address}')
+                #print(f'[PARENT] Sending old weights at iteration {interaction_count} to {self.address}')
 
                 # Sending a copy of the global net parameters to the child
                 current_encoded_weights = self.neural_net.encode_parameters()
                 parent.send(current_encoded_weights)
 
-                # Check the length of the gradients because it is what it will be waiting for
-                gradient_length = self.get_gradients_length()
-
-            self.optimizer.zero_grad()
-
             # Receiving the new weights coming from the child
-            new_gradients_bytes = GeneralSocket.wait_msg_received(len_true_msg=gradient_length,
+            new_weights_bytes = GeneralSocket.wait_msg_received(len_true_msg=len_msg_bytes,
                                                                 gsocket=parent)
 
             # If the message received from the child is the one signaling the end, then close the connection
-            if new_gradients_bytes == self.end_msg:
+            if new_weights_bytes == start_end_msg:
                 break
 
             # with torch.no_grad():
@@ -121,14 +102,11 @@ class Parent(GeneralSocket):
             #     self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_add_gradients(b=new_gradients_bytes)
-
-            # Now that the gradients have been uploaded into the parameters, update with the optimizer
-            self.optimizer.step()
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
-
+            
             # Simple count of the number of interactions
             interaction_count += 1
             if interaction_count % 100 == 0:
@@ -154,6 +132,7 @@ class Parent(GeneralSocket):
         t = threading.Thread(target=self.handle_client, args=())
         t.start()
         # print(self.rewards)
+
 
     def run_episode(self):
         env = gym.make("LunarLander-v2")
