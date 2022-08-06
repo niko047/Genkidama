@@ -109,7 +109,7 @@ class Parent(GeneralSocket):
             #     self.storage_received.append(flattened_new_params.detach().numpy())
 
             # Upload the new weights to the network
-            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.5)
+            self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
