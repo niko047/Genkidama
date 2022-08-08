@@ -294,8 +294,7 @@ class SingleCoreProcess(mp.Process):
             # Appends the current reward to the list of rewards
             self.results.append(ep_reward)
 
-            if i%5==0:
-                print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
+            print(f'EPISODE {i} -> EP Reward for cpu {self.b.cpu_id} is: {ep_reward}')
 
             # Every 50 episodes
             if i % 100 == 0 and i:
@@ -340,7 +339,7 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=.5, neural_net=self.cores_orchestrator_neural_net)
+                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=.6, neural_net=self.cores_orchestrator_neural_net)
                 #self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.1)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
@@ -349,9 +348,9 @@ class SingleCoreProcess(mp.Process):
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[:] = False
 
-                # TODO - Print here the parameters of the
-                print(f'DESIGNATED CORE NOW IS {self.cpu_id}')
-                print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
+                # # TODO - Print here the parameters of the
+                # print(f'DESIGNATED CORE NOW IS {self.cpu_id}')
+                # print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
 
 
@@ -362,8 +361,8 @@ class SingleCoreProcess(mp.Process):
                 while self.cores_waiting_semaphor[self.cpu_id]:
                     pass
 
-                # TODO - Print parameters here of the orchestrator
-                print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
+                # # TODO - Print parameters here of the orchestrator
+                # print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
 
             # Pull parameters from orchestrator to each single node
             self.pull_parameters_to_single_core()
