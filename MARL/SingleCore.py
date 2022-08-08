@@ -303,6 +303,7 @@ class SingleCoreProcess(mp.Process):
                 df_res = pd.DataFrame({'rewards': self.results})
                 df_res.to_csv(results_path)
 
+            print(f'[BEFORE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
             # Update here the local network sending the updates
             if self.cpu_id == self.ep_rand_designated_core:
@@ -348,7 +349,7 @@ class SingleCoreProcess(mp.Process):
 
                 # TODO - Print here the parameters of the
                 print(f'DESIGNATED CORE NOW IS {self.cpu_id}')
-                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
+                print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
 
 
@@ -360,7 +361,7 @@ class SingleCoreProcess(mp.Process):
                     pass
 
                 # TODO - Print parameters here of the orchestrator
-                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
+                print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
 
             # Pull parameters from orchestrator to each single node
             self.pull_parameters_to_single_core()
