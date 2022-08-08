@@ -23,6 +23,7 @@ import os
 import pandas as pd
 
 from .general_socket import GeneralSocket
+from
 import threading
 import gym
 import torch
@@ -110,7 +111,7 @@ class Parent(GeneralSocket):
 
             # Upload the new weights to the network
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
-            GeneralSocket.decode_implement_shared_parameters_(new_weights_bytes, alpha=.9, neural_net=self.neural_net)
+            Parent.decode_implement_shared_parameters_(new_weights_bytes, alpha=.9, neural_net=self.neural_net)
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
@@ -120,6 +121,14 @@ class Parent(GeneralSocket):
             if interaction_count % 100 == 0:
                 if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
                     torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
+
+    @staticmethod
+    def decode_implement_shared_parameters_(b: bytes, alpha: float, neural_net):
+        with torch.no_grad():
+            new_state_dict = torchload(io.BytesIO(b))
+
+        for key in neural_net.state_dict():
+            neural_net[key] = neural_net[key] * (1 - alpha) + alpha * new_state_dict[key]
 
     def handle_client(self, addr, pid):
         """Handles the worker, all the functionality is inside here"""
