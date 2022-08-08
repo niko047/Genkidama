@@ -1,4 +1,5 @@
 import torch.multiprocessing as mp
+from MARL.Nets.general_network import GeneralNeuralNet
 import random
 import pandas as pd
 import numpy as np
@@ -339,7 +340,8 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.1)
+                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=.5, neural_net=self.cores_orchestrator_neural_net)
+                #self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.1)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
                 self.ep_rand_designated_core[:] = random.choice(list(range(self.tot_num_active_cpus)))
