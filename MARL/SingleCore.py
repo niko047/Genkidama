@@ -347,7 +347,8 @@ class SingleCoreProcess(mp.Process):
                 self.cores_waiting_semaphor[:] = False
 
                 # TODO - Print here the parameters of the
-                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
+                print(f'DESIGNATED CORE NOW IS {self.cpu_id}')
+                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
 
 
