@@ -125,8 +125,10 @@ class Parent(GeneralSocket):
         with torch.no_grad():
             new_state_dict = torchload(io.BytesIO(b))
 
-        for key in neural_net.state_dict():
-            neural_net[key] = neural_net[key] * (1 - alpha) + alpha * new_state_dict[key]
+        SDnet = neural_net.state_dict()
+
+        for key in SDnet:
+            SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
 
     def handle_client(self, addr, pid):
         """Handles the worker, all the functionality is inside here"""
