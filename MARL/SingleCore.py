@@ -303,7 +303,7 @@ class SingleCoreProcess(mp.Process):
                 df_res = pd.DataFrame({'rewards': self.results})
                 df_res.to_csv(results_path)
 
-            print(f'[BEFORE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
+            # print(f'[BEFORE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
             # Update here the local network sending the updates
             if self.cpu_id == self.ep_rand_designated_core:
