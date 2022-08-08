@@ -346,6 +346,9 @@ class SingleCoreProcess(mp.Process):
                 # Wake up the other cpu cores that were sleeping
                 self.cores_waiting_semaphor[:] = False
 
+                # TODO - Print here the parameters of the
+                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
+
 
 
 
@@ -354,6 +357,9 @@ class SingleCoreProcess(mp.Process):
                 self.cores_waiting_semaphor[self.cpu_id] = True
                 while self.cores_waiting_semaphor[self.cpu_id]:
                     pass
+
+                # TODO - Print parameters here of the orchestrator
+                print(f'PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}')
 
             # Pull parameters from orchestrator to each single node
             self.pull_parameters_to_single_core()
