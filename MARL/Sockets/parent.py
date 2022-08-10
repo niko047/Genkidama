@@ -19,6 +19,8 @@ import io
 import numpy as np
 import socket
 import os
+import torch.multiprocessing as mp
+
 
 import pandas as pd
 
@@ -156,7 +158,7 @@ class Parent(GeneralSocket):
 
     def run(self):
         for i, addr in enumerate(self.addresses):
-            t = threading.Thread(target=self.handle_client, args=(addr, i,))
+            t = mp.Process(target=self.handle_client, args=(addr, i,))
             t.start()
         # print(self.rewards)
 
