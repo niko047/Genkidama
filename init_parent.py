@@ -28,6 +28,7 @@ print(len(ADDRESSES))
 
 def start_parent():
     net = SmallNet(s_dim=8, a_dim=4)
+    net.share_memory()
     s = Parent(addresses=ADDRESSES, port=PORT, network_blueprint=net)
     s.run()
 
