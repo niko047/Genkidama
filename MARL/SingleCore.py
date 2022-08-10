@@ -330,7 +330,7 @@ class SingleCoreProcess(mp.Process):
 
                 new_weights_bytes = self.cores_orchestrator_neural_net.encode_parameters()
                 # Sends the new weights over the network to the parent
-                # print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
+                print(f'Sending weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
                 self.socket_connection.send(new_weights_bytes)
 
                 # Wait for weights to be received
@@ -339,7 +339,7 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=.6, neural_net=self.cores_orchestrator_neural_net)
+                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=1, neural_net=self.cores_orchestrator_neural_net)
                 #self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.1)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
@@ -350,7 +350,7 @@ class SingleCoreProcess(mp.Process):
 
                 # # TODO - Print here the parameters of the
                 # print(f'DESIGNATED CORE NOW IS {self.cpu_id}')
-                # print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
+                print(f'[AFTER UPDATE] PARAMETERS OF {self.cpu_id} @ ITER {i} ARE \n {[p for p in self.cores_orchestrator_neural_net.parameters()][-1]}\n')
 
 
 

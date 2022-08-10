@@ -110,7 +110,9 @@ class Parent(GeneralSocket):
 
             # Upload the new weights to the network
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
-            self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.9, neural_net=self.neural_net)
+            print(f'Previous param {[p for p in self.neural_net.parameters()][-1]}')
+            self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
+            print(f'Next param {[p for p in self.neural_net.parameters()][-1]}')
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
