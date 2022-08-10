@@ -39,10 +39,11 @@ class GeneralNeuralNet(object):
         with torch.no_grad():
             new_state_dict = torchload(io.BytesIO(b))
 
-        SDnet = neural_net.state_dict()
+            SDnet = neural_net.state_dict()
 
-        for key in SDnet:
-            SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
+            for key in SDnet:
+                SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
+            neural_net.load_state_dict(SDnet)
 
 
     @staticmethod

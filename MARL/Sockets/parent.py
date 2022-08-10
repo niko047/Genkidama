@@ -122,13 +122,13 @@ class Parent(GeneralSocket):
 
 
             for key in SDnet:
-                if key == 'v2.weight':
-                    print(f"Old param is {SDnet[key]}")
-                    print(f"Incoming param is {new_state_dict[key]}")
+                # if key == 'v2.weight':
+                    # print(f"Old param is {SDnet[key]}")
+                    # print(f"Incoming param is {new_state_dict[key]}")
                 SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
                 self.neural_net.load_state_dict(SDnet)
-                if key == 'v2.weight':
-                    print(f'New params after weighted are {self.neural_net.state_dict()[key]}')
+                # if key == 'v2.weight':
+                    # print(f'New params after weighted are {self.neural_net.state_dict()[key]}')
 
 
             # TODO - 2 things can save the day:
