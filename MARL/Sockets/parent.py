@@ -19,7 +19,6 @@ import io
 import numpy as np
 import socket
 import os
-import torch.multiprocessing as mp
 
 
 import pandas as pd
@@ -121,15 +120,20 @@ class Parent(GeneralSocket):
 
             SDnet = self.neural_net.state_dict()
 
+
             for key in SDnet:
                 if key == 'v2.weight':
                     print(f"Old param is {SDnet[key]}")
                     print(f"Incoming param is {new_state_dict[key]}")
                 SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
+                self.neural_net.load_state_dict(SDnet)
                 if key == 'v2.weight':
                     print(f'New params after weighted are {self.neural_net.state_dict()[key]}')
 
 
+            # TODO - 2 things can save the day:
+            # 1. flatten the parameters and implement the weighted average
+            # 2.
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
@@ -158,7 +162,7 @@ class Parent(GeneralSocket):
 
     def run(self):
         for i, addr in enumerate(self.addresses):
-            t = mp.Process(target=self.handle_client, args=(addr, i,))
+            t = threading.Thread(target=self.handle_client, args=(addr, i,))
             t.start()
         # print(self.rewards)
 
