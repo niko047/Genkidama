@@ -110,9 +110,24 @@ class Parent(GeneralSocket):
 
             # Upload the new weights to the network
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
-            print(f'Previous param {[p for p in self.neural_net.parameters()][-1]}')
-            self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
-            print(f'Next param {[p for p in self.neural_net.parameters()][-1]}')
+            # self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
+
+            alpha = .7
+
+            with torch.no_grad():
+                new_state_dict = torchload(io.BytesIO(new_weights_bytes))
+
+            SDnet = self.neural_net.state_dict()
+
+            for key in SDnet:
+                if key == 'v2.weight':
+                    print(f"Old param is {SDnet[key]}")
+                    print(f"Incoming param is {new_state_dict[key]}")
+                SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
+                if key == 'v2.weight':
+                    print(f'New params after weighted are {self.neural_net.state_dict()[key]}')
+
+
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)
@@ -122,15 +137,7 @@ class Parent(GeneralSocket):
             if interaction_count % 100 == 0:
                 if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
                     torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
-    @staticmethod
-    def decode_implement_shared_parameters_(b: bytes, alpha: float, neural_net):
-        with torch.no_grad():
-            new_state_dict = torchload(io.BytesIO(b))
 
-        SDnet = neural_net.state_dict()
-
-        for key in SDnet:
-            SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
 
     def handle_client(self, addr, pid):
         """Handles the worker, all the functionality is inside here"""
