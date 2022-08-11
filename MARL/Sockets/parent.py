@@ -113,7 +113,7 @@ class Parent(GeneralSocket):
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
             # self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
 
-            alpha = .5
+            alpha = .6
 
             with torch.no_grad():
                 new_state_dict = torchload(io.BytesIO(new_weights_bytes))
@@ -129,11 +129,6 @@ class Parent(GeneralSocket):
                 self.neural_net.load_state_dict(SDnet)
                 # if key == 'v2.weight':
                     # print(f'New params after weighted are {self.neural_net.state_dict()[key]}')
-
-
-            # TODO - 2 things can save the day:
-            # 1. flatten the parameters and implement the weighted average
-            # 2.
 
             current_encoded_weights = self.neural_net.encode_parameters()
             parent.send(current_encoded_weights)

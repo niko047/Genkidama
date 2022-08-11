@@ -56,7 +56,6 @@ num_steps = 2000
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function
-alpha = 1
 gamma=.999
 
 
