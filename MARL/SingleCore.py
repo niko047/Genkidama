@@ -308,10 +308,10 @@ class SingleCoreProcess(mp.Process):
             # Update here the local network sending the updates
             if self.cpu_id == self.ep_rand_designated_core:
                 # print(f'CORE ID {self.cpu_id} IS THE DESIGNATED UPDATOR')
-                # Wait until all the other cpus have finished their episode
-                if i % 100 == 0 and i:
-                    # Save torch weights
-                    torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_{i}.pt')
+                # Wait until all the other cpus have finished their episodes
+                # if i % 100 == 0 and i:
+                #     # Save torch weights
+                #     torch.save(self.cores_orchestrator_neural_net, f'lunar_lander_{i}.pt')
 
                 while not torch.all(
                         # torch.logical_or(

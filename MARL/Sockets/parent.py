@@ -45,6 +45,8 @@ class Parent(GeneralSocket):
 
         self.connections = [0 for i in range(len(addresses))]
 
+        self.global_iter_count = 0
+
 
 
     def parent_init(self, address, port, pid):
@@ -72,7 +74,7 @@ class Parent(GeneralSocket):
             handshake_msg += parent.recv(len_msg_bytes)
         return True
 
-    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, old_weights_bytes):
+    def connection_interaction(self, parent, start_end_msg, len_msg_bytes, pid):
         """Handles what's up until the connection is alive:
         - Handshake with the parent
         - While stopping condition is met
@@ -113,7 +115,7 @@ class Parent(GeneralSocket):
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
             # self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
 
-            alpha = .6
+            alpha = .5
 
             with torch.no_grad():
                 new_state_dict = torchload(io.BytesIO(new_weights_bytes))
@@ -134,10 +136,11 @@ class Parent(GeneralSocket):
             parent.send(current_encoded_weights)
             
             # Simple count of the number of interactions
+            self.global_iter_count += 1
             interaction_count += 1
-            if interaction_count % 100 == 0:
-                if f'lunar_lander_a4c_{interaction_count}.pt' not in os.listdir('Tests'):
-                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{interaction_count}.pt')
+            if self.global_iter_count % 200 == 0:
+                if f'lunar_lander_a4c_{self.global_iter_count//2}.pt' not in os.listdir('Tests'):
+                    torch.save(self.neural_net, f'Tests/lunar_lander_a4c_{self.global_iter_count//2}.pt')
 
 
     def handle_client(self, addr, pid):
@@ -149,7 +152,7 @@ class Parent(GeneralSocket):
             len_msg_bytes, start_end_msg, old_weights_bytes = self.get_start_end_msg()
 
             # Interaction has started here, all the talking is done inside this function
-            self.connection_interaction(parent, start_end_msg, len_msg_bytes, old_weights_bytes)
+            self.connection_interaction(parent, start_end_msg, len_msg_bytes, pid)
 
             # Interaction has been truncated, close connection
             print(f'[PARENT] Correctly closing parent')
