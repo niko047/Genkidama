@@ -115,7 +115,7 @@ class Parent(GeneralSocket):
             # self.neural_net.decode_implement_parameters(new_weights_bytes, alpha=.9)
             # self.decode_implement_shared_parameters_(new_weights_bytes, alpha=.7, neural_net=self.neural_net)
 
-            alpha = .9
+            alpha = .1
 
             with torch.no_grad():
                 new_state_dict = torchload(io.BytesIO(new_weights_bytes))
