@@ -339,7 +339,7 @@ class SingleCoreProcess(mp.Process):
                     recv_weights_bytes += self.socket_connection.recv(self.len_msg_bytes)
 
                 # Alpha = 1 means it's going to completely overwrite the child params with the parent ones
-                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=.1, neural_net=self.cores_orchestrator_neural_net)
+                GeneralNeuralNet.decode_implement_shared_parameters_(recv_weights_bytes, alpha=0, neural_net=self.cores_orchestrator_neural_net)
                 #self.cores_orchestrator_neural_net.decode_implement_parameters(recv_weights_bytes, alpha=.1)
                 # print(f'Received weights: {parameters_to_vector(self.cores_orchestrator_neural_net.parameters())}')
 
