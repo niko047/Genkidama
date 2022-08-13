@@ -25,7 +25,7 @@ NUM_STEPS: int = 2000
 BATCH_SIZE: int = 120
 SAMPLE_FROM_SHARED_MEMORY: bool = False
 SAMPLE_WITH_REPLACEMENT: bool = False
-GAMMA = .95 # change it adding more 9
+GAMMA = .999 # change it adding more 9
 
 env = gym.make('LunarLander-v2')
 
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     semaphor = Manager.initialize_semaphor(NUM_CPUS)
 
     procs = [mp.Process(target=train_model, args=(glob_net, opt, buffer, i, semaphor, res_queue)) for i in
-             range(NUM_CPUS)]
+             range(4)]
 
     [p.start() for p in procs]
 
