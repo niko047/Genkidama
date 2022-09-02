@@ -1,4 +1,4 @@
-# MARL
+# Genkidama
 
 This repo aims at providing a flexible system for distributed training of Reinforcement Learning algorithms, exploiting concepts such as Networking using websockets to connect and orchestrate multiple machines connected to a network, as well as multithreading and multiprocessing to optimize the use of resources within each of the working machines.
 
