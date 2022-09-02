@@ -56,7 +56,8 @@ python3 init_parent.py -ip <child_ip_0> <child_ip_1> ... <child_ip_n> -p <port_n
 - [x] Implement multithreading on the parent
 - [x] Test successfully learning of a3c
 - [x] Test successfully learning of a4c
-- [ ] Implement with other RL algorithms (perhaps a custom Environment)
+- [x] Implement with other RL algorithms (perhaps a custom Environment)
+- [ ] Implement replay memory buffer shared amongst CPU for R.S.
 - [ ] Open to other networks outside LAN (use security protocols and hashes)
 - [ ] Try to do the same with Quantization (reducing bytes size of param, from f32 to less, makes the transfer of params faster)
 
