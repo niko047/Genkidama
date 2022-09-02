@@ -1,12 +1,6 @@
-import threading
-
-import torch
-
 from MARL.Sockets.parent import Parent
-from MARL.Nets.neural_net import ToyNet
 from timeit import default_timer as timer
-from MARL.Nets.CartPoleNet import CartPoleNet
-
+from MARL.Nets.SmallNet import SmallNet
 import argparse
 
 
@@ -30,18 +24,13 @@ args = my_parser.parse_args()
 PORT = args.port
 ADDRESSES = args.ipaddress
 print(f'ADDRESSES ARE {ADDRESSES}')
+print(len(ADDRESSES))
 
 def start_parent():
-    net = CartPoleNet(4, 2)
-    for idx, address in enumerate(ADDRESSES):
-        s = Parent(child_address=address, port=PORT, network_blueprint=net)
-        s.run()
-        print(f'Process number {idx} is running on {address}')
-    # torch.save(net, 'cart_pole_model_a4c.pt')
+    net = SmallNet(s_dim=8, a_dim=4)
+    net.share_memory()
+    s = Parent(addresses=ADDRESSES, port=PORT, network_blueprint=net)
+    s.run()
 
 if __name__ == '__main__':
-    start = timer()
     start_parent()
-    end = timer()
-
-    print(f'{end - start} seconds elapsed')

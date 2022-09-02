@@ -50,11 +50,8 @@ class CoresOrchestrator(object):
         self.neural_net = neural_net
 
         # Defines a precise object orchestrator neural net from the blueprint and shares its memory
-        self.orchestrator_neural_net = self.neural_net(s_dim=4, a_dim=2) # TODO - Change
+        self.orchestrator_neural_net = self.neural_net(s_dim=8, a_dim=4) # TODO - Change
         self.orchestrator_neural_net.share_memory()
-
-        self.empty_net_trial = self.neural_net(s_dim=4, a_dim=2)
-        self.empty_net_trial.share_memory()
 
         self.gym_rl_env_str = gym_rl_env_str
 
@@ -87,6 +84,12 @@ class CoresOrchestrator(object):
         cores_waiting_semaphor = Manager.initialize_semaphor(self.n_available_cores)
         ending_semaphor = Manager.initialize_semaphor(self.n_available_cores)
 
+        ep_rand_designated_core = torch.Tensor([1])
+        ep_rand_designated_core.share_memory_()
+
+        old_weights_bytes = self.orchestrator_neural_net.encode_parameters()
+        len_msg_bytes = len(old_weights_bytes)
+
 
         # Define a queue here for storing ongoing results
         res_queue = Manager.initialize_queue()
@@ -114,7 +117,8 @@ class CoresOrchestrator(object):
             socket_connection=conn,
             address=addr,
             gamma=self.gamma,
-            empty_net_trial=self.empty_net_trial
+            ep_rand_designated_core=ep_rand_designated_core,
+            len_msg_bytes = len_msg_bytes,
         ) for cpu_id in
             range(self.n_available_cores)]
 
@@ -130,6 +134,6 @@ class CoresOrchestrator(object):
                 break
                 # Join the processes (terminate them)
         [p.join() for p in procs]
-        torch.save(self.orchestrator_neural_net, 'cart_pole_model_a4c.pt')
+        # torch.save(self.orchestrator_neural_net, 'cart_pole_model_a4c.pt')
 
         print(f'Processes have finished running.')

@@ -1,1 +1,8 @@
 *.png
+*.pt
+*.csv
+SolvedLunarLander
+Tests
+runs
+A4C
+chromedata

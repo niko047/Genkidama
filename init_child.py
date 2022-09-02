@@ -3,8 +3,8 @@ import torch
 from MARL.Sockets.child import Client
 from MARL.CoresOrchestrator import CoresOrchestrator
 from MARL.Nets.neural_net import ToyNet
-from MARL.Nets.CartPoleNet import CartPoleNet
 from MARL.Optims.shared_optims import SharedAdam
+from MARL.Nets.SmallNet import SmallNet
 from torch.optim import SGD
 import argparse
 import gym
@@ -27,8 +27,8 @@ PORT = args.port
 ADDRESS = args.ipaddress
 
 # TODO - Set up a different environment for these ones
-neural_net = CartPoleNet
-gym_rl_env_str = "CartPole-v1"
+neural_net = SmallNet
+gym_rl_env_str = "LunarLander-v2"
 
 # Initialize environment just to retrieve informations and then close it
 env = gym.make(gym_rl_env_str)
@@ -38,25 +38,25 @@ len_actions = env.action_space.n
 len_reward = 1
 
 
-shared_optimizer = SGD
+shared_optimizer = SGD # TODO - Change it to adam
 shared_opt_kwargs = {
     "lr": 1e-4,
-    "momentum": 0.9
+    "momentum": 0.9,
+    "weight_decay": .001,
 }
 
-batch_size = 5
-num_iters = 40
+batch_size = 120
+num_iters = 120
 replacement = False
 sample_from_shared_memory = True
 cpu_capacity = 1  # 80%
-num_episodes = 200
-num_steps = 500
+num_episodes = 5000
+num_steps = 2000
 
 
 # Alpha is the parameter determining the importance of the individual cores when sending weights to parent net
 # TODO - Insert alpha inside the function
-alpha = 1
-gamma=.9
+gamma=.999
 
 
 def start_child():

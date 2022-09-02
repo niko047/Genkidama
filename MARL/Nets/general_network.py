@@ -12,8 +12,8 @@ class GeneralNeuralNet(object):
         """Gets the current parameters of the network and encodes them into bytes"""
         buff = io.BytesIO()
         with torch.no_grad():
-            flattened_params = parameters_to_vector(self.parameters())
-        torchsave(flattened_params, buff)
+            state_dict = self.state_dict()
+        torchsave(state_dict, buff)
         buff.seek(0)
         r = buff.read()
         return r
@@ -31,6 +31,20 @@ class GeneralNeuralNet(object):
             # Alpha determines the learning contribute of each worker at each gradient sent
             flat_weighted_avg = (1-alpha) * flattened_old_params + alpha * flattened_new_params
             vector_to_parameters(flat_weighted_avg, self.parameters())
+
+
+    # TODO - Try instead the for loop approach
+    @staticmethod
+    def decode_implement_shared_parameters_(b: bytes, alpha: float, neural_net):
+        with torch.no_grad():
+            new_state_dict = torchload(io.BytesIO(b))
+
+            SDnet = neural_net.state_dict()
+
+            for key in SDnet:
+                SDnet[key] = SDnet[key] * (1 - alpha) + alpha * new_state_dict[key]
+            neural_net.load_state_dict(SDnet)
+
 
     @staticmethod
     def initialize_layers(layers):
