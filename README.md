@@ -1,6 +1,8 @@
 # Genkidama
 
-This repo aims at providing a flexible system for distributed training of Reinforcement Learning algorithms, exploiting concepts such as Networking using websockets to connect and orchestrate multiple machines connected to a network, as well as multithreading and multiprocessing to optimize the use of resources within each of the working machines.
+This repo aims at providing a flexible system for distributed training of Reinforcement Learning algorithms, exploiting concepts such as Networking using websockets to connect and orchestrate multiple machines connected to a network, as well as multithreading and multiprocessing to optimize the use of resources within each of the working machines. 
+
+Note: This is the outcome of a MSc thesis, which is attached to the repo itself, alongside the results mentioned in the document.
 
 ## Functioning
 The algorithm underlying all of this is the following at the time being (it's simplified to give a general idea, there is a lot of coordination with semaphores, waiting and parameters under the hood):
